@@ -309,3 +309,23 @@ footer.site{padding:44px 5vw 26px;}
   transition:background .15s;
 }
 .img-modal-close:hover{background:var(--red);color:#fff;}
+/* ===== BOTONES DE SELECCION UNICA (ENTREGA / PAGO) ===== */
+.option-group-label{
+  font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+  color:var(--gray);margin:18px 0 8px;
+}
+.option-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px;}
+.option-btn{
+  flex:1;min-width:130px;padding:11px 12px;border:1px solid var(--gray-line);
+  background:var(--white);color:var(--ink);font-family:'Work Sans';font-weight:700;
+  font-size:12px;cursor:pointer;transition:.15s;text-align:center;
+}
+.option-btn:hover{border-color:var(--ink);}
+.option-btn.selected{border-color:var(--red);background:var(--ink);color:var(--white);}
+[data-theme="dark"] .option-btn.selected{background:var(--red);border-color:var(--red);color:#fff;}
+
+.back-link{
+  display:block;text-align:center;margin-top:12px;font-size:12.5px;
+  color:var(--gray);text-decoration:underline;
+}
+.back-link:hover{color:var(--red-dark);}
