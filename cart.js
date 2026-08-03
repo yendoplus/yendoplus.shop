@@ -13,9 +13,14 @@ function saveCart(cart){
 
 function addToCart(item){
   const cart = getCart();
+  const maxStock = item.stock && item.stock > 0 ? item.stock : Infinity;
   const existing = cart.find(i => i.id === item.id);
-  if(existing){ existing.qty += 1; }
-  else { cart.push({ id:item.id, name:item.name, price:item.price, img:item.img, qty:1 }); }
+  if(existing){
+    existing.qty = Math.min(existing.qty + 1, maxStock);
+    if(item.stock) existing.stock = item.stock;
+  } else {
+    cart.push({ id:item.id, name:item.name, price:item.price, img:item.img, stock:item.stock || 0, qty:1 });
+  }
   saveCart(cart);
 }
 
@@ -27,7 +32,8 @@ function setQty(id, qty){
   const cart = getCart();
   const item = cart.find(i => i.id === id);
   if(item){
-    item.qty = Math.max(1, parseInt(qty) || 1);
+    const maxStock = item.stock && item.stock > 0 ? item.stock : Infinity;
+    item.qty = Math.min(Math.max(1, parseInt(qty) || 1), maxStock);
     saveCart(cart);
   }
 }
