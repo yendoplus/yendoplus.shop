@@ -20,8 +20,27 @@
     <a href="https://www.facebook.com/Yendoplus" target="_blank">Facebook</a>
     <a href="https://www.instagram.com/yendo_plus/" target="_blank">Instagram</a>
     <a href="https://www.tiktok.com/@yendo_plus" target="_blank">TikTok</a>
-    <button id="themeToggle" class="theme-toggle" aria-label="Cambiar a modo oscuro">🌙 Oscuro</button>
-    <a href="cart.html" class="cart-link">Carrito <span id="cartBadge" class="cart-badge">0</span></a>
+    <button id="themeToggle" class="theme-switch" aria-label="Cambiar tema" aria-pressed="false">
+      <span class="theme-switch-track">
+        <span class="theme-switch-icon">☀️</span>
+        <span class="theme-switch-icon">🌙</span>
+        <span class="theme-switch-thumb"></span>
+      </span>
+    </button>
+    <div class="cart-wrap" id="cartWrap">
+      <button id="cartToggle" class="cart-link" aria-label="Ver carrito">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        Carrito <span id="cartBadge" class="cart-badge">0</span>
+      </button>
+      <div class="mini-cart" id="miniCart">
+        <div class="mini-cart-top">
+          <span id="miniCartCount">0 items</span>
+          <span id="miniCartTotal">S/0</span>
+        </div>
+        <a href="cart.html" class="mini-cart-checkout">IR AL CARRITO Y PAGAR</a>
+        <div class="mini-cart-items" id="miniCartItems"></div>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -212,7 +231,7 @@ document.getElementById('prodContainer').addEventListener('click', (e)=>{
   if(!p) return;
   addToCart({ id:p.id, name:p.name, price:p.price, img:`${p.id}.jpg` });
   const original = btn.textContent;
-  btn.textContent = 'Agregado ✓';
+  btn.textContent = 'Agregado al carrito de compras';
   setTimeout(()=>{ btn.textContent = original; }, 1200);
 });
 
