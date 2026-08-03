@@ -72,9 +72,9 @@
 
   <div class="foot-meta-row">
     <div class="foot-icons-row">
-      <a href="https://www.facebook.com/Yendoplus" target="_blank" class="foot-icon-circle" aria-label="Facebook">f</a>
-      <a href="https://www.instagram.com/yendo_plus/" target="_blank" class="foot-icon-circle" aria-label="Instagram">ig</a>
-      <a href="https://www.tiktok.com/@yendo_plus" target="_blank" class="foot-icon-circle" aria-label="TikTok">tt</a>
+      <a href="https://www.facebook.com/Yendoplus" target="_blank" class="foot-icon-circle" aria-label="Facebook"><img src="facebook.jpg" alt="Facebook"></a>
+      <a href="https://www.instagram.com/yendo_plus/" target="_blank" class="foot-icon-circle" aria-label="Instagram"><img src="instagram.jpg" alt="Instagram"></a>
+      <a href="https://www.tiktok.com/@yendo_plus" target="_blank" class="foot-icon-circle" aria-label="TikTok"><img src="tiktok.jpg" alt="TikTok"></a>
     </div>
     <p class="pickup-note"><strong>Recojo presencial:</strong> también puedes recoger tu pedido en nuestro almacén, ubicado en Cedros de Villa, Chorrillos.</p>
     <span class="price-pill">Precios en S/ (Soles)</span>
@@ -84,6 +84,11 @@
     <span>© 2026 Yendo Plus. Todos los derechos reservados.</span>
   </div>
 </footer>
+
+<div class="img-modal" id="imgModal">
+  <button class="img-modal-close" id="imgModalClose" aria-label="Cerrar">✕</button>
+  <img id="imgModalPic" src="" alt="">
+</div>
 
 <script src="theme.js"></script>
 <script src="cart.js"></script>
@@ -124,12 +129,10 @@ let currentCat='all';
 function render(){
   const cats=[...new Set(allProducts.map(p=>p.category).filter(Boolean))];
 
-  // Nav
   const nav=document.getElementById('navCats');
   nav.innerHTML='<button data-cat="all" class="active">Todo</button>' +
     cats.map(c=>`<button data-cat="${c}">${c}</button>`).join('');
 
-  // Category rows (estilo HLJ)
   const catList=document.getElementById('catList');
   catList.innerHTML = cats.map((c,i)=>{
     const items=allProducts.filter(p=>p.category===c);
@@ -145,10 +148,8 @@ function render(){
     </div>`;
   }).join('');
 
-  // Footer cats
   document.getElementById('footCats').innerHTML = cats.map(c=>`<a href="#catalogo" data-cat="${c}" class="foot-cat-link">${c}</a>`).join('');
 
-  // Filter bar
   const fb=document.getElementById('filterBar');
   fb.innerHTML = '<button data-cat="all" class="active">Todo</button>' +
     cats.map(c=>`<button data-cat="${c}">${c}</button>`).join('');
@@ -252,11 +253,6 @@ document.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape') closeImgModal();
 });
 </script>
-
-<div class="img-modal" id="imgModal">
-  <button class="img-modal-close" id="imgModalClose" aria-label="Cerrar">✕</button>
-  <img id="imgModalPic" src="" alt="">
-</div>
 
 </body>
 </html>
