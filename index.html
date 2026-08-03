@@ -71,32 +71,26 @@
 </section>
 
 <footer class="site">
-  <div class="foot-top">
-    <div class="foot-brand">
-      <img src="logo.jpg" alt="Yendo Plus">
+  <div class="foot-grid">
+    <div class="foot-col-left">
+      <img src="logo.jpg" alt="Yendo Plus" class="foot-logo">
       <p>Figuras de anime, Tomica, Hot Wheels y coleccionables. Catálogo actualizado directo desde nuestro inventario.</p>
-      <div class="foot-socials">
-        <a href="https://www.facebook.com/Yendoplus" target="_blank">Facebook</a>
-        <a href="https://www.instagram.com/yendo_plus/" target="_blank">Instagram</a>
-        <a href="https://www.tiktok.com/@yendo_plus" target="_blank">TikTok</a>
-      </div>
     </div>
-    <div class="foot-cols">
-      <div class="foot-col">
-        <h4>Categorías</h4>
-        <div id="footCats"></div>
-      </div>
-    </div>
-  </div>
 
-  <div class="foot-meta-row">
-    <div class="foot-icons-row">
-      <a href="https://www.facebook.com/Yendoplus" target="_blank" class="foot-icon-circle" aria-label="Facebook"><img src="facebook.jpg" alt="Facebook"></a>
-      <a href="https://www.instagram.com/yendo_plus/" target="_blank" class="foot-icon-circle" aria-label="Instagram"><img src="instagram.jpg" alt="Instagram"></a>
-      <a href="https://www.tiktok.com/@yendo_plus" target="_blank" class="foot-icon-circle" aria-label="TikTok"><img src="tiktok.jpg" alt="TikTok"></a>
+    <div class="foot-col-center">
+      <div class="foot-icons-row">
+        <a href="https://www.facebook.com/Yendoplus" target="_blank" class="foot-icon-circle" aria-label="Facebook"><img src="facebook.jpg" alt="Facebook"></a>
+        <a href="https://www.instagram.com/yendo_plus/" target="_blank" class="foot-icon-circle" aria-label="Instagram"><img src="instagram.jpg" alt="Instagram"></a>
+        <a href="https://www.tiktok.com/@yendo_plus" target="_blank" class="foot-icon-circle" aria-label="TikTok"><img src="tiktok.jpg" alt="TikTok"></a>
+      </div>
     </div>
-    <p class="pickup-note"><strong>Recojo presencial:</strong> también puedes recoger tu pedido en nuestro almacén, ubicado en Cedros de Villa, Chorrillos.</p>
-    <span class="price-pill">Precios en S/ (Soles)</span>
+
+    <div class="foot-col-right">
+      <p class="foot-info"><strong>Nos ubicamos en:</strong><br>Cedros de Villa, Chorrillos</p>
+      <p class="foot-info"><strong>Contacto:</strong> 915 276 379</p>
+      <p class="foot-info"><strong>Correo:</strong> yendoplus.pe@gmail.com</p>
+      <span class="price-pill">Precios en S/ (Soles)</span>
+    </div>
   </div>
 
   <div class="foot-bottom">
@@ -167,8 +161,6 @@ function render(){
     </div>`;
   }).join('');
 
-  document.getElementById('footCats').innerHTML = cats.map(c=>`<a href="#catalogo" data-cat="${c}" class="foot-cat-link">${c}</a>`).join('');
-
   const fb=document.getElementById('filterBar');
   fb.innerHTML = '<button data-cat="all" class="active">Todo</button>' +
     cats.map(c=>`<button data-cat="${c}">${c}</button>`).join('');
@@ -185,7 +177,7 @@ function attachHandlers(){
       document.querySelectorAll('[data-cat]').forEach(x=>x.classList.remove('active'));
       document.querySelectorAll(`[data-cat="${currentCat}"]`).forEach(x=>x.classList.add('active'));
       renderProducts();
-      if(el.classList.contains('foot-cat-link') || el.classList.contains('cat-row')){
+      if(el.classList.contains('cat-row')){
         document.getElementById('catalogo').scrollIntoView({behavior:'smooth'});
       }
     });
