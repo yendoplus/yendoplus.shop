@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Tu Carrito — Yendo Plus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="logo-wrap">
+    <a href="index.html"><img src="logo.jpg" alt="Yendo Plus"></a>
+  </div>
+  <nav class="main"><a href="index.html" style="font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.6px;">← Volver al catálogo</a></nav>
+  <div class="socials-top">
+    <button id="themeToggle" class="theme-toggle" aria-label="Cambiar a modo oscuro">🌙 Oscuro</button>
+    <a href="cart.html" class="cart-link">Carrito <span id="cartBadge" class="cart-badge">0</span></a>
+  </div>
+</header>
+
+<section class="section" style="border-bottom:none;">
+  <div class="section-head">
+    <h2>Tu carrito</h2>
+    <span class="sub" id="itemCountLabel"></span>
+  </div>
+
+  <div id="cartContent"></div>
+</section>
+
+<script src="theme.js"></script>
+<script src="cart.js"></script>
+<script>
+const WHATSAPP_NUMBER = "51915276379";
+
+function renderCart(){
+  const cart = getCart();
+  const container = document.getElementById('cartContent');
+  document.getElementById('itemCountLabel').textContent = `${cartCount()} artículo${cartCount()===1?'':'s'}`;
+
+  if(cart.length === 0){
+    container.innerHTML = `<div class="empty-cart">
+      Tu carrito está vacío.<br><br>
+      <a href="index.html">Ver catálogo →</a>
+    </div>`;
+    return;
+  }
+
+  const rows = cart.map(i => `
+    <div class="cart-row" data-id="${i.id}">
+      <img src="${i.img}" alt="${i.name}" onerror="this.style.opacity=0">
+      <div class="ci-info">
+        <div class="ci-name">${i.name}</div>
+        <div class="ci-price">S/${i.price} c/u</div>
+      </div>
+      <div class="qty-stepper">
+        <button class="qty-minus" data-id="${i.id}">−</button>
+        <input type="number" min="1" value="${i.qty}" class="qty-input" data-id="${i.id}">
+        <button class="qty-plus" data-id="${i.id}">+</button>
+      </div>
+      <div class="ci-subtotal">S/${(parseFloat(i.price) * i.qty).toFixed(0)}</div>
+      <button class="ci-remove" data-id="${i.id}">Quitar</button>
+    </div>
+  `).join('');
+
+  const total = cartTotal();
+
+  container.innerHTML = `
+    <div class="cart-layout">
+      <div class="cart-items">${rows}</div>
+      <div class="order-box">
+        <h3>Resumen del pedido</h3>
+        <div class="order-row"><span>Artículos</span><span>${cartCount()}</span></div>
+        <div class="order-total"><span>Total</span><span>S/${total.toFixed(0)}</span></div>
+
+        <div class="delivery-options" id="deliveryOptions">
+          <label class="delivery-option" data-value="feria">
+            <input type="radio" name="delivery" value="feria" checked>
+            <div>
+              <div class="do-title">Recojo en feria / almacén</div>
+              <div class="do-sub">Feria todos los sábados, o recojo directo en Cedros de Villa, Chorrillos</div>
+            </div>
+          </label>
+          <label class="delivery-option" data-value="shalom">
+            <input type="radio" name="delivery" value="shalom">
+            <div>
+              <div class="do-title">Envío por Shalom</div>
+              <div class="do-sub">Requiere DNI para el envío</div>
+            </div>
+          </label>
+        </div>
+
+        <div class="field-group">
+          <label for="buyerName">Nombre completo</label>
+          <input type="text" id="buyerName" placeholder="Tu nombre">
+        </div>
+        <div class="field-group">
+          <label for="buyerPhone">Número de contacto</label>
+          <input type="tel" id="buyerPhone" placeholder="Tu número">
+        </div>
+        <div class="field-group" id="dniGroup" style="display:none;">
+          <label for="buyerDni">DNI (para envío Shalom)</label>
+          <input type="text" id="buyerDni" placeholder="Tu DNI">
+        </div>
+
+        <button class="send-btn" id="sendBtn">Enviar pedido por WhatsApp</button>
+        <p class="form-note">Se abrirá WhatsApp con el detalle de tu pedido para confirmar contigo.</p>
+      </div>
+    </div>
+  `;
+
+  attachCartEvents();
+}
+
+function attachCartEvents(){
+  document.querySelectorAll('.qty-minus').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const cart = getCart();
+      const item = cart.find(i=>i.id===btn.dataset.id);
+      if(item) setQty(item.id, item.qty - 1 < 1 ? 1 : item.qty - 1);
+      renderCart();
+    });
+  });
+  document.querySelectorAll('.qty-plus').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const cart = getCart();
+      const item = cart.find(i=>i.id===btn.dataset.id);
+      if(item) setQty(item.id, item.qty + 1);
+      renderCart();
+    });
+  });
+  document.querySelectorAll('.qty-input').forEach(input=>{
+    input.addEventListener('change', ()=>{
+      setQty(input.dataset.id, input.value);
+      renderCart();
+    });
+  });
+  document.querySelectorAll('.ci-remove').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      removeFromCart(btn.dataset.id);
+      renderCart();
+    });
+  });
+  document.querySelectorAll('input[name="delivery"]').forEach(radio=>{
+    radio.addEventListener('change', updateDeliverySelection);
+  });
+  updateDeliverySelection();
+
+  document.getElementById('sendBtn').addEventListener('click', sendOrder);
+}
+
+function updateDeliverySelection(){
+  const selected = document.querySelector('input[name="delivery"]:checked')?.value;
+  document.querySelectorAll('.delivery-option').forEach(el=>{
+    el.classList.toggle('selected', el.dataset.value === selected);
+  });
+  document.getElementById('dniGroup').style.display = selected === 'shalom' ? 'block' : 'none';
+}
+
+function sendOrder(){
+  const cart = getCart();
+  if(cart.length === 0) return;
+
+  const delivery = document.querySelector('input[name="delivery"]:checked')?.value;
+  const name = document.getElementById('buyerName').value.trim();
+  const phone = document.getElementById('buyerPhone').value.trim();
+  const dni = document.getElementById('buyerDni').value.trim();
+
+  if(!name){ alert('Por favor ingresa tu nombre.'); return; }
+  if(!phone){ alert('Por favor ingresa tu número de contacto.'); return; }
+  if(delivery === 'shalom' && !dni){ alert('Por favor ingresa tu DNI para el envío por Shalom.'); return; }
+
+  const lines = cart.map(i => `• ${i.name} x${i.qty} — S/${(parseFloat(i.price) * i.qty).toFixed(0)}`);
+  const total = cartTotal();
+
+  let msg = `Hola, quiero hacer un pedido en Yendo Plus:\n\n`;
+  msg += lines.join('\n');
+  msg += `\n\nTotal: S/${total.toFixed(0)}`;
+  msg += `\n\nEntrega: ${delivery === 'feria' ? 'Feria (sábado)' : 'Shalom'}`;
+  msg += `\nNombre: ${name}`;
+  msg += `\nNúmero: ${phone}`;
+  if(delivery === 'shalom'){
+    msg += `\nDNI: ${dni}`;
+  }
+
+  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+  clearCart();
+  renderCart();
+}
+
+renderCart();
+</script>
+
+</body>
+</html>
