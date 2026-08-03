@@ -20,6 +20,7 @@
     <a href="https://www.facebook.com/Yendoplus" target="_blank" class="social-icon" aria-label="Facebook"><img src="facebook.jpg" alt="Facebook"></a>
     <a href="https://www.instagram.com/yendo_plus/" target="_blank" class="social-icon" aria-label="Instagram"><img src="instagram.jpg" alt="Instagram"></a>
     <a href="https://www.tiktok.com/@yendo_plus" target="_blank" class="social-icon" aria-label="TikTok"><img src="tiktok.jpg" alt="TikTok"></a>
+    <a href="https://wa.me/51915276379" target="_blank" class="social-icon" aria-label="WhatsApp"><img src="whatsapp.jpg" alt="WhatsApp"></a>
     <button id="themeToggle" class="theme-switch" aria-label="Cambiar tema" aria-pressed="false">
       <span class="theme-switch-track">
         <span class="theme-switch-icon">☀️</span>
@@ -82,6 +83,7 @@
         <a href="https://www.facebook.com/Yendoplus" target="_blank" class="foot-icon-circle" aria-label="Facebook"><img src="facebook.jpg" alt="Facebook"></a>
         <a href="https://www.instagram.com/yendo_plus/" target="_blank" class="foot-icon-circle" aria-label="Instagram"><img src="instagram.jpg" alt="Instagram"></a>
         <a href="https://www.tiktok.com/@yendo_plus" target="_blank" class="foot-icon-circle" aria-label="TikTok"><img src="tiktok.jpg" alt="TikTok"></a>
+        <a href="https://wa.me/51915276379" target="_blank" class="foot-icon-circle" aria-label="WhatsApp"><img src="whatsapp.jpg" alt="WhatsApp"></a>
       </div>
     </div>
 
@@ -142,10 +144,12 @@ let currentCat='all';
 function render(){
   const cats=[...new Set(allProducts.map(p=>p.category).filter(Boolean))];
 
+  // Nav
   const nav=document.getElementById('navCats');
   nav.innerHTML='<button data-cat="all" class="active">Todo</button>' +
     cats.map(c=>`<button data-cat="${c}">${c}</button>`).join('');
 
+  // Category rows (estilo HLJ)
   const catList=document.getElementById('catList');
   catList.innerHTML = cats.map((c,i)=>{
     const items=allProducts.filter(p=>p.category===c);
@@ -161,6 +165,7 @@ function render(){
     </div>`;
   }).join('');
 
+  // Filter bar
   const fb=document.getElementById('filterBar');
   fb.innerHTML = '<button data-cat="all" class="active">Todo</button>' +
     cats.map(c=>`<button data-cat="${c}">${c}</button>`).join('');
