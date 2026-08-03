@@ -1,151 +1,261 @@
-const CART_KEY = 'yendo_cart_v1';
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Confirmar pedido — Yendo Plus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-function getCart(){
-  try{ return JSON.parse(localStorage.getItem(CART_KEY)) || []; }
-  catch(e){ return []; }
-}
+<header class="site">
+  <div class="logo-wrap">
+    <a href="index.html"><img src="logo.jpg" alt="Yendo Plus"></a>
+  </div>
+  <nav class="main"><a href="index.html" style="font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.6px;">← Volver al catálogo</a></nav>
+  <div class="socials-top">
+    <button id="themeToggle" class="theme-switch" aria-label="Cambiar tema" aria-pressed="false">
+      <span class="theme-switch-track">
+        <span class="theme-switch-icon">☀️</span>
+        <span class="theme-switch-icon">🌙</span>
+        <span class="theme-switch-thumb"></span>
+      </span>
+    </button>
+    <div class="cart-wrap" id="cartWrap">
+      <button id="cartToggle" class="cart-link" aria-label="Ver carrito">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        Carrito <span id="cartBadge" class="cart-badge">0</span>
+      </button>
+      <div class="mini-cart" id="miniCart">
+        <div class="mini-cart-top">
+          <span id="miniCartCount">0 items</span>
+          <span id="miniCartTotal">S/0</span>
+        </div>
+        <a href="cart.html" class="mini-cart-checkout">IR AL CARRITO</a>
+        <div class="mini-cart-items" id="miniCartItems"></div>
+      </div>
+    </div>
+  </div>
+</header>
 
-function saveCart(cart){
-  localStorage.setItem(CART_KEY, JSON.stringify(cart));
-  updateCartBadge();
-  renderMiniCart();
-}
+<section class="section" style="border-bottom:none;">
+  <div class="section-head">
+    <h2>Confirmar pedido</h2>
+    <span class="sub" id="itemCountLabel"></span>
+  </div>
 
-function addToCart(item){
+  <div id="cartContent"></div>
+</section>
+
+<script src="theme.js"></script>
+<script src="cart.js"></script>
+<script>
+const WHATSAPP_NUMBER = "51915276379";
+let selectedDelivery = null;
+let selectedPayment = null;
+
+const DELIVERY_LABELS = {
+  almacen: "Recojo en almacén (Cedros de Villa, Chorrillos)",
+  feria: "Recojo en feria (sábados)",
+  shalom: "Envío por Shalom"
+};
+const PAYMENT_LABELS = {
+  directo: "Yape / Plin / Transferencia",
+  tarjeta: "Tarjeta (+5%, vía MercadoPago)"
+};
+
+function renderCart(){
   const cart = getCart();
-  const maxStock = item.stock && item.stock > 0 ? item.stock : Infinity;
-  const existing = cart.find(i => i.id === item.id);
-  if(existing){
-    existing.qty = Math.min(existing.qty + 1, maxStock);
-    if(item.stock) existing.stock = item.stock;
-  } else {
-    cart.push({ id:item.id, name:item.name, price:item.price, img:item.img, stock:item.stock || 0, qty:1 });
-  }
-  saveCart(cart);
-}
-
-function removeFromCart(id){
-  saveCart(getCart().filter(i => i.id !== id));
-}
-
-function setQty(id, qty){
-  const cart = getCart();
-  const item = cart.find(i => i.id === id);
-  if(item){
-    const maxStock = item.stock && item.stock > 0 ? item.stock : Infinity;
-    item.qty = Math.min(Math.max(1, parseInt(qty) || 1), maxStock);
-    saveCart(cart);
-  }
-}
-
-function clearCart(){
-  saveCart([]);
-}
-
-function cartCount(){
-  return getCart().reduce((sum, i) => sum + i.qty, 0);
-}
-
-function cartTotal(){
-  return getCart().reduce((sum, i) => sum + (parseFloat(i.price) || 0) * i.qty, 0);
-}
-
-function updateCartBadge(){
-  const badge = document.getElementById('cartBadge');
-  if(!badge) return;
-  const n = cartCount();
-  badge.textContent = n;
-  badge.style.display = n > 0 ? 'inline-flex' : 'none';
-}
-
-function renderMiniCart(){
-  const panel = document.getElementById('miniCart');
-  if(!panel) return;
-  const cart = getCart();
-
-  const countLabel = document.getElementById('miniCartCount');
-  const totalLabel = document.getElementById('miniCartTotal');
-  if(countLabel) countLabel.textContent = `${cartCount()} item${cartCount()===1?'':'s'}`;
-  if(totalLabel) totalLabel.textContent = `S/${cartTotal().toFixed(0)}`;
-
-  const itemsEl = document.getElementById('miniCartItems');
-  if(!itemsEl) return;
+  const container = document.getElementById('cartContent');
+  document.getElementById('itemCountLabel').textContent = `${cartCount()} artículo${cartCount()===1?'':'s'}`;
 
   if(cart.length === 0){
-    itemsEl.innerHTML = '<div class="mini-cart-empty">Tu carrito está vacío.</div>';
+    container.innerHTML = `<div class="empty-cart">
+      Tu carrito está vacío.<br><br>
+      <a href="index.html">Ver catálogo →</a>
+    </div>`;
     return;
   }
 
-  itemsEl.innerHTML = cart.map(i => `
-    <div class="mini-cart-row">
+  const rows = cart.map(i => `
+    <div class="cart-row" data-id="${i.id}">
       <img src="${i.img}" alt="${i.name}" onerror="this.style.opacity=0">
-      <div class="mc-info">
-        <div class="mc-name">${i.name}</div>
-        <div class="mc-price">S/${i.price}</div>
-        <div class="mc-qty-controls">
-          <button type="button" class="mc-qty-minus${i.qty<=1?' mc-qty-trash':''}" data-id="${i.id}" aria-label="${i.qty<=1?'Eliminar':'Restar'}">${i.qty<=1?'🗑':'−'}</button>
-          <span class="mc-qty-value">${i.qty}</span>
-          <button type="button" class="mc-qty-plus" data-id="${i.id}" aria-label="Sumar">+</button>
-        </div>
+      <div class="ci-info">
+        <div class="ci-name">${i.name}</div>
+        <div class="ci-price">S/${i.price} c/u</div>
       </div>
-      <button type="button" class="mini-cart-remove" data-id="${i.id}" aria-label="Quitar">✕</button>
+      <div class="qty-stepper">
+        <button class="qty-minus" data-id="${i.id}">−</button>
+        <input type="number" min="1" value="${i.qty}" class="qty-input" data-id="${i.id}">
+        <button class="qty-plus" data-id="${i.id}">+</button>
+      </div>
+      <div class="ci-subtotal">S/${(parseFloat(i.price) * i.qty).toFixed(0)}</div>
+      <button class="ci-remove" data-id="${i.id}">Quitar</button>
     </div>
   `).join('');
 
-  itemsEl.querySelectorAll('.mini-cart-remove').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
+  container.innerHTML = `
+    <div class="cart-layout">
+      <div class="cart-items">${rows}</div>
+      <div class="order-box">
+        <h3>Datos del pedido</h3>
+
+        <div class="field-group">
+          <label for="buyerName">Nombre y apellido</label>
+          <input type="text" id="buyerName" placeholder="Tu nombre completo">
+        </div>
+        <div class="field-group">
+          <label for="buyerPhone">Teléfono de contacto</label>
+          <input type="tel" id="buyerPhone" placeholder="Tu número">
+        </div>
+
+        <div class="option-group-label">Entrega</div>
+        <div class="option-buttons" id="deliveryOptions">
+          <button type="button" class="option-btn" data-group="delivery" data-value="almacen">Recojo en almacén</button>
+          <button type="button" class="option-btn" data-group="delivery" data-value="feria">Recojo en feria</button>
+          <button type="button" class="option-btn" data-group="delivery" data-value="shalom">Envío por Shalom</button>
+        </div>
+        <div class="field-group" id="dniGroup" style="display:none;">
+          <label for="buyerDni">DNI (para envío Shalom)</label>
+          <input type="text" id="buyerDni" placeholder="Tu DNI">
+        </div>
+
+        <div class="option-group-label">Método de pago</div>
+        <div class="option-buttons" id="paymentOptions">
+          <button type="button" class="option-btn" data-group="payment" data-value="directo">Yape / Plin / Transferencia</button>
+          <button type="button" class="option-btn" data-group="payment" data-value="tarjeta">Tarjeta (+5%)</button>
+        </div>
+
+        <div class="order-row"><span>Subtotal</span><span id="sumSubtotal">S/0</span></div>
+        <div class="order-row" id="surchargeRow" style="display:none;"><span>Recargo tarjeta (5%)</span><span id="sumSurcharge">S/0</span></div>
+        <div class="order-total"><span>Total</span><span id="sumTotal">S/0</span></div>
+
+        <button class="send-btn" id="sendBtn">FINALIZAR COMPRA</button>
+        <a href="index.html" class="back-link">← Volver a la página</a>
+        <p class="form-note">Se abrirá WhatsApp con el detalle de tu pedido para confirmar contigo.</p>
+      </div>
+    </div>
+  `;
+
+  attachCartEvents();
+  updateTotals();
+}
+
+function attachCartEvents(){
+  document.querySelectorAll('.qty-minus').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const cart = getCart();
+      const item = cart.find(i=>i.id===btn.dataset.id);
+      if(item) setQty(item.id, item.qty - 1 < 1 ? 1 : item.qty - 1);
+      renderCart();
+    });
+  });
+  document.querySelectorAll('.qty-plus').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const cart = getCart();
+      const item = cart.find(i=>i.id===btn.dataset.id);
+      if(item) setQty(item.id, item.qty + 1);
+      renderCart();
+    });
+  });
+  document.querySelectorAll('.qty-input').forEach(input=>{
+    input.addEventListener('change', ()=>{
+      setQty(input.dataset.id, input.value);
+      renderCart();
+    });
+  });
+  document.querySelectorAll('.ci-remove').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
       removeFromCart(btn.dataset.id);
+      renderCart();
     });
   });
 
-  itemsEl.querySelectorAll('.mc-qty-minus').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const item = getCart().find(i => i.id === btn.dataset.id);
-      if(!item) return;
-      if(item.qty <= 1){ removeFromCart(item.id); }
-      else { setQty(item.id, item.qty - 1); }
-    });
+  document.querySelectorAll('.option-btn[data-group="delivery"]').forEach(btn=>{
+    btn.addEventListener('click', ()=>selectOption('delivery', btn.dataset.value, btn));
+  });
+  document.querySelectorAll('.option-btn[data-group="payment"]').forEach(btn=>{
+    btn.addEventListener('click', ()=>selectOption('payment', btn.dataset.value, btn));
   });
 
-  itemsEl.querySelectorAll('.mc-qty-plus').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const item = getCart().find(i => i.id === btn.dataset.id);
-      if(!item) return;
-      setQty(item.id, item.qty + 1);
-    });
-  });
+  document.getElementById('sendBtn').addEventListener('click', sendOrder);
 }
 
-function toggleMiniCart(){
-  const panel = document.getElementById('miniCart');
-  if(!panel) return;
-  const willOpen = !panel.classList.contains('open');
-  panel.classList.toggle('open', willOpen);
-  if(willOpen) renderMiniCart();
+function selectOption(group, value, btnEl){
+  document.querySelectorAll(`.option-btn[data-group="${group}"]`).forEach(b=>b.classList.remove('selected'));
+  btnEl.classList.add('selected');
+
+  if(group === 'delivery'){
+    selectedDelivery = value;
+    document.getElementById('dniGroup').style.display = value === 'shalom' ? 'block' : 'none';
+  }
+  if(group === 'payment'){
+    selectedPayment = value;
+    updateTotals();
+  }
 }
 
-function closeMiniCart(){
-  const panel = document.getElementById('miniCart');
-  if(panel) panel.classList.remove('open');
+function updateTotals(){
+  const subtotal = cartTotal();
+  const surcharge = selectedPayment === 'tarjeta' ? subtotal * 0.05 : 0;
+  const total = subtotal + surcharge;
+
+  document.getElementById('sumSubtotal').textContent = `S/${subtotal.toFixed(0)}`;
+  document.getElementById('surchargeRow').style.display = selectedPayment === 'tarjeta' ? 'flex' : 'none';
+  document.getElementById('sumSurcharge').textContent = `S/${surcharge.toFixed(0)}`;
+  document.getElementById('sumTotal').textContent = `S/${total.toFixed(0)}`;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  updateCartBadge();
-  renderMiniCart();
+function sendOrder(){
+  const cart = getCart();
+  if(cart.length === 0) return;
 
-  const toggle = document.getElementById('cartToggle');
-  if(toggle){
-    toggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleMiniCart();
-    });
+  const name = document.getElementById('buyerName').value.trim();
+  const phone = document.getElementById('buyerPhone').value.trim();
+  const dni = document.getElementById('buyerDni').value.trim();
+
+  if(!name){ alert('Por favor ingresa tu nombre y apellido.'); return; }
+  if(!phone){ alert('Por favor ingresa tu teléfono de contacto.'); return; }
+  if(!selectedDelivery){ alert('Por favor elige un método de entrega.'); return; }
+  if(!selectedPayment){ alert('Por favor elige un método de pago.'); return; }
+  if(selectedDelivery === 'shalom' && !dni){ alert('Por favor ingresa tu DNI para el envío por Shalom.'); return; }
+
+  const subtotal = cartTotal();
+  const surcharge = selectedPayment === 'tarjeta' ? subtotal * 0.05 : 0;
+  const total = subtotal + surcharge;
+
+  const lines = cart.map(i => `• ${i.name} x${i.qty} — S/${(parseFloat(i.price) * i.qty).toFixed(0)}`);
+
+  let msg = `Hola, quiero hacer un pedido en Yendo Plus:\n\n`;
+  msg += lines.join('\n');
+  msg += `\n\nSubtotal: S/${subtotal.toFixed(0)}`;
+  if(selectedPayment === 'tarjeta'){
+    msg += `\nRecargo tarjeta (5%): S/${surcharge.toFixed(0)}`;
+  }
+  msg += `\nTotal: S/${total.toFixed(0)}`;
+  msg += `\n\nEntrega: ${DELIVERY_LABELS[selectedDelivery]}`;
+  msg += `\nPago: ${PAYMENT_LABELS[selectedPayment]}`;
+  if(selectedPayment === 'tarjeta'){
+    msg += `\n(Por favor envíame tu link de pago de MercadoPago por S/${total.toFixed(0)})`;
+  }
+  msg += `\n\nNombre: ${name}`;
+  msg += `\nTeléfono: ${phone}`;
+  if(selectedDelivery === 'shalom'){
+    msg += `\nDNI: ${dni}`;
   }
 
-  document.addEventListener('click', (e) => {
-    const wrap = document.getElementById('cartWrap');
-    if(wrap && !wrap.contains(e.target)) closeMiniCart();
-  });
-});
+  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+  clearCart();
+  selectedDelivery = null;
+  selectedPayment = null;
+  renderCart();
+}
+
+renderCart();
+</script>
+
+</body>
+</html>
