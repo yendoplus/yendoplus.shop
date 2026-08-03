@@ -72,13 +72,17 @@ function renderMiniCart(){
 
   itemsEl.innerHTML = cart.map(i => `
     <div class="mini-cart-row">
-      <button class="mini-cart-remove" data-id="${i.id}" aria-label="Quitar">✕</button>
       <img src="${i.img}" alt="${i.name}" onerror="this.style.opacity=0">
       <div class="mc-info">
         <div class="mc-name">${i.name}</div>
         <div class="mc-price">S/${i.price}</div>
-        <div class="mc-qty">Cantidad: ${i.qty}</div>
+        <div class="mc-qty-controls">
+          <button type="button" class="mc-qty-minus" data-id="${i.id}" aria-label="Restar">−</button>
+          <span class="mc-qty-value">${i.qty}</span>
+          <button type="button" class="mc-qty-plus" data-id="${i.id}" aria-label="Sumar">+</button>
+        </div>
       </div>
+      <button type="button" class="mini-cart-remove" data-id="${i.id}" aria-label="Quitar">✕</button>
     </div>
   `).join('');
 
@@ -86,6 +90,25 @@ function renderMiniCart(){
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       removeFromCart(btn.dataset.id);
+    });
+  });
+
+  itemsEl.querySelectorAll('.mc-qty-minus').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const item = getCart().find(i => i.id === btn.dataset.id);
+      if(!item) return;
+      if(item.qty <= 1){ removeFromCart(item.id); }
+      else { setQty(item.id, item.qty - 1); }
+    });
+  });
+
+  itemsEl.querySelectorAll('.mc-qty-plus').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const item = getCart().find(i => i.id === btn.dataset.id);
+      if(!item) return;
+      setQty(item.id, item.qty + 1);
     });
   });
 }
