@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Confirmar pedido — Yendo Plus</title>
+<link rel="icon" type="image/jpeg" href="logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -32,7 +33,7 @@
       <div class="mini-cart" id="miniCart">
         <div class="mini-cart-top">
           <span id="miniCartCount">0 items</span>
-          <span id="miniCartTotal">S/0</span>
+          <span id="miniCartTotal">S/0.00</span>
         </div>
         <a href="cart.html" class="mini-cart-checkout">IR AL CARRITO</a>
         <div class="mini-cart-items" id="miniCartItems"></div>
@@ -64,10 +65,32 @@ const DELIVERY_LABELS = {
   feria: "Recojo en feria (sábados)",
   shalom: "Envío por Shalom"
 };
-const PAYMENT_LABELS = {
-  directo: "Yape / Plin / Transferencia",
-  tarjeta: "Tarjeta (+5%, vía MercadoPago)"
-};
+
+const PAYMENT_OPTIONS = [
+  { value: "directo",  label: "Yape / Plin / Transferencia",      surcharge: false, inPersonOnly: false },
+  { value: "efectivo", label: "Efectivo",                          surcharge: false, inPersonOnly: true  },
+  { value: "pos",      label: "POS en persona (+5%)",              surcharge: true,  inPersonOnly: true  },
+  { value: "tarjeta",  label: "Tarjeta vía MercadoPago (+5%)",      surcharge: true,  inPersonOnly: false }
+];
+
+function availablePaymentOptions(){
+  const inPerson = selectedDelivery === 'almacen' || selectedDelivery === 'feria';
+  return PAYMENT_OPTIONS.filter(o => !o.inPersonOnly || inPerson);
+}
+
+function isSurchargePayment(value){
+  const opt = PAYMENT_OPTIONS.find(o => o.value === value);
+  return opt ? opt.surcharge : false;
+}
+
+function paymentLabel(value){
+  const opt = PAYMENT_OPTIONS.find(o => o.value === value);
+  return opt ? opt.label : value;
+}
+
+function feriaAdvance(subtotal){
+  return subtotal < 100 ? 5 : subtotal * 0.05;
+}
 
 function renderCart(){
   const cart = getCart();
@@ -87,14 +110,14 @@ function renderCart(){
       <img src="${i.img}" alt="${i.name}" onerror="this.style.opacity=0">
       <div class="ci-info">
         <div class="ci-name">${i.name}</div>
-        <div class="ci-price">S/${i.price} c/u</div>
+        <div class="ci-price">${fmtPrice(i.price)} c/u</div>
       </div>
       <div class="qty-stepper">
         <button class="qty-minus" data-id="${i.id}">−</button>
         <input type="number" min="1" value="${i.qty}" class="qty-input" data-id="${i.id}">
         <button class="qty-plus" data-id="${i.id}">+</button>
       </div>
-      <div class="ci-subtotal">S/${(parseFloat(i.price) * i.qty).toFixed(0)}</div>
+      <div class="ci-subtotal">${fmtPrice(parseFloat(i.price) * i.qty)}</div>
       <button class="ci-remove" data-id="${i.id}">Quitar</button>
     </div>
   `).join('');
@@ -107,11 +130,13 @@ function renderCart(){
 
         <div class="field-group">
           <label for="buyerName">Nombre y apellido</label>
-          <input type="text" id="buyerName" placeholder="Tu nombre completo">
+          <input type="text" id="buyerName" placeholder="Tu nombre completo" autocomplete="name">
+          <p class="field-hint" id="nameHint"></p>
         </div>
         <div class="field-group">
-          <label for="buyerPhone">Teléfono de contacto</label>
-          <input type="tel" id="buyerPhone" placeholder="Tu número">
+          <label for="buyerPhone">Teléfono de contacto (9 dígitos)</label>
+          <input type="tel" id="buyerPhone" placeholder="987654321" inputmode="numeric" maxlength="9" autocomplete="tel">
+          <p class="field-hint" id="phoneHint"></p>
         </div>
 
         <div class="option-group-label">Entrega</div>
@@ -122,18 +147,17 @@ function renderCart(){
         </div>
         <div class="field-group" id="dniGroup" style="display:none;">
           <label for="buyerDni">DNI (para envío Shalom)</label>
-          <input type="text" id="buyerDni" placeholder="Tu DNI">
+          <input type="text" id="buyerDni" placeholder="Tu DNI" inputmode="numeric">
         </div>
+
+        <div class="feria-note" id="feriaNote" style="display:none;"></div>
 
         <div class="option-group-label">Método de pago</div>
-        <div class="option-buttons" id="paymentOptions">
-          <button type="button" class="option-btn" data-group="payment" data-value="directo">Yape / Plin / Transferencia</button>
-          <button type="button" class="option-btn" data-group="payment" data-value="tarjeta">Tarjeta (+5%)</button>
-        </div>
+        <div class="option-buttons" id="paymentOptions"></div>
 
-        <div class="order-row"><span>Subtotal</span><span id="sumSubtotal">S/0</span></div>
-        <div class="order-row" id="surchargeRow" style="display:none;"><span>Recargo tarjeta (5%)</span><span id="sumSurcharge">S/0</span></div>
-        <div class="order-total"><span>Total</span><span id="sumTotal">S/0</span></div>
+        <div class="order-row"><span>Subtotal</span><span id="sumSubtotal">S/0.00</span></div>
+        <div class="order-row" id="surchargeRow" style="display:none;"><span id="surchargeLabel">Recargo (5%)</span><span id="sumSurcharge">S/0.00</span></div>
+        <div class="order-total"><span>Total</span><span id="sumTotal">S/0.00</span></div>
 
         <button class="send-btn" id="sendBtn">FINALIZAR COMPRA</button>
         <a href="index.html" class="back-link">← Volver a la página</a>
@@ -143,7 +167,25 @@ function renderCart(){
   `;
 
   attachCartEvents();
+  renderPaymentOptions();
   updateTotals();
+}
+
+function renderPaymentOptions(){
+  const wrap = document.getElementById('paymentOptions');
+  const options = availablePaymentOptions();
+
+  if(selectedPayment && !options.find(o => o.value === selectedPayment)){
+    selectedPayment = null;
+  }
+
+  wrap.innerHTML = options.map(o =>
+    `<button type="button" class="option-btn${selectedPayment===o.value?' selected':''}" data-group="payment" data-value="${o.value}">${o.label}</button>`
+  ).join('');
+
+  wrap.querySelectorAll('.option-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>selectOption('payment', btn.dataset.value, btn));
+  });
 }
 
 function attachCartEvents(){
@@ -179,11 +221,22 @@ function attachCartEvents(){
   document.querySelectorAll('.option-btn[data-group="delivery"]').forEach(btn=>{
     btn.addEventListener('click', ()=>selectOption('delivery', btn.dataset.value, btn));
   });
-  document.querySelectorAll('.option-btn[data-group="payment"]').forEach(btn=>{
-    btn.addEventListener('click', ()=>selectOption('payment', btn.dataset.value, btn));
-  });
 
   document.getElementById('sendBtn').addEventListener('click', sendOrder);
+
+  const nameInput = document.getElementById('buyerName');
+  nameInput.addEventListener('input', ()=>{
+    const clean = nameInput.value.replace(/[^A-Za-zÀ-ÿ\s]/g, '');
+    if(clean !== nameInput.value) nameInput.value = clean;
+    document.getElementById('nameHint').textContent = '';
+  });
+
+  const phoneInput = document.getElementById('buyerPhone');
+  phoneInput.addEventListener('input', ()=>{
+    const clean = phoneInput.value.replace(/[^0-9]/g, '').slice(0, 9);
+    if(clean !== phoneInput.value) phoneInput.value = clean;
+    document.getElementById('phoneHint').textContent = '';
+  });
 }
 
 function selectOption(group, value, btnEl){
@@ -193,55 +246,83 @@ function selectOption(group, value, btnEl){
   if(group === 'delivery'){
     selectedDelivery = value;
     document.getElementById('dniGroup').style.display = value === 'shalom' ? 'block' : 'none';
+    renderPaymentOptions();
   }
   if(group === 'payment'){
     selectedPayment = value;
-    updateTotals();
   }
+  updateTotals();
 }
 
 function updateTotals(){
   const subtotal = cartTotal();
-  const surcharge = selectedPayment === 'tarjeta' ? subtotal * 0.05 : 0;
+  const surcharge = isSurchargePayment(selectedPayment) ? subtotal * 0.05 : 0;
   const total = subtotal + surcharge;
 
-  document.getElementById('sumSubtotal').textContent = `S/${subtotal.toFixed(0)}`;
-  document.getElementById('surchargeRow').style.display = selectedPayment === 'tarjeta' ? 'flex' : 'none';
-  document.getElementById('sumSurcharge').textContent = `S/${surcharge.toFixed(0)}`;
-  document.getElementById('sumTotal').textContent = `S/${total.toFixed(0)}`;
+  document.getElementById('sumSubtotal').textContent = fmtPrice(subtotal);
+  document.getElementById('surchargeRow').style.display = surcharge > 0 ? 'flex' : 'none';
+  document.getElementById('surchargeLabel').textContent = selectedPayment === 'pos' ? 'Recargo POS (5%)' : 'Recargo tarjeta (5%)';
+  document.getElementById('sumSurcharge').textContent = fmtPrice(surcharge);
+  document.getElementById('sumTotal').textContent = fmtPrice(total);
+
+  const feriaNote = document.getElementById('feriaNote');
+  if(selectedDelivery === 'feria'){
+    const advance = feriaAdvance(subtotal);
+    feriaNote.style.display = 'block';
+    feriaNote.innerHTML = `<strong>Adelanto para reservar en feria:</strong> ${fmtPrice(advance)} vía Yape/Plin ` +
+      `(S/5.00 si el pedido es menor a S/100.00, o 5% si es S/100.00 a más).`;
+  } else {
+    feriaNote.style.display = 'none';
+  }
 }
 
 function sendOrder(){
   const cart = getCart();
   if(cart.length === 0) return;
 
-  const name = document.getElementById('buyerName').value.trim();
-  const phone = document.getElementById('buyerPhone').value.trim();
+  const nameInput = document.getElementById('buyerName');
+  const phoneInput = document.getElementById('buyerPhone');
+  const name = nameInput.value.trim();
+  const phone = phoneInput.value.trim();
   const dni = document.getElementById('buyerDni').value.trim();
 
-  if(!name){ alert('Por favor ingresa tu nombre y apellido.'); return; }
-  if(!phone){ alert('Por favor ingresa tu teléfono de contacto.'); return; }
+  const namePattern = /^[A-Za-zÀ-ÿ\s]+$/;
+  const phonePattern = /^\d{9}$/;
+
+  if(!name || !namePattern.test(name)){
+    document.getElementById('nameHint').textContent = 'Ingresa tu nombre usando solo letras.';
+    nameInput.focus();
+    return;
+  }
+  if(!phonePattern.test(phone)){
+    document.getElementById('phoneHint').textContent = 'El teléfono debe tener exactamente 9 dígitos.';
+    phoneInput.focus();
+    return;
+  }
   if(!selectedDelivery){ alert('Por favor elige un método de entrega.'); return; }
   if(!selectedPayment){ alert('Por favor elige un método de pago.'); return; }
   if(selectedDelivery === 'shalom' && !dni){ alert('Por favor ingresa tu DNI para el envío por Shalom.'); return; }
 
   const subtotal = cartTotal();
-  const surcharge = selectedPayment === 'tarjeta' ? subtotal * 0.05 : 0;
+  const surcharge = isSurchargePayment(selectedPayment) ? subtotal * 0.05 : 0;
   const total = subtotal + surcharge;
 
-  const lines = cart.map(i => `• ${i.name} x${i.qty} — S/${(parseFloat(i.price) * i.qty).toFixed(0)}`);
+  const lines = cart.map(i => `• ${i.name} x${i.qty} — ${fmtPrice(parseFloat(i.price) * i.qty)}`);
 
   let msg = `Hola, quiero hacer un pedido en Yendo Plus:\n\n`;
   msg += lines.join('\n');
-  msg += `\n\nSubtotal: S/${subtotal.toFixed(0)}`;
-  if(selectedPayment === 'tarjeta'){
-    msg += `\nRecargo tarjeta (5%): S/${surcharge.toFixed(0)}`;
+  msg += `\n\nSubtotal: ${fmtPrice(subtotal)}`;
+  if(surcharge > 0){
+    msg += `\n${selectedPayment === 'pos' ? 'Recargo POS (5%)' : 'Recargo tarjeta (5%)'}: ${fmtPrice(surcharge)}`;
   }
-  msg += `\nTotal: S/${total.toFixed(0)}`;
+  msg += `\nTotal: ${fmtPrice(total)}`;
   msg += `\n\nEntrega: ${DELIVERY_LABELS[selectedDelivery]}`;
-  msg += `\nPago: ${PAYMENT_LABELS[selectedPayment]}`;
+  if(selectedDelivery === 'feria'){
+    msg += `\nAdelanto para reservar (Yape/Plin): ${fmtPrice(feriaAdvance(subtotal))}`;
+  }
+  msg += `\nPago: ${paymentLabel(selectedPayment)}`;
   if(selectedPayment === 'tarjeta'){
-    msg += `\n(Por favor envíame tu link de pago de MercadoPago por S/${total.toFixed(0)})`;
+    msg += `\n(Coordinamos el link de pago de MercadoPago por el monto total)`;
   }
   msg += `\n\nNombre: ${name}`;
   msg += `\nTeléfono: ${phone}`;
