@@ -17,9 +17,9 @@
   </div>
   <nav class="main" id="navCats"></nav>
   <div class="socials-top">
-    <a href="https://www.facebook.com/Yendoplus" target="_blank">Facebook</a>
-    <a href="https://www.instagram.com/yendo_plus/" target="_blank">Instagram</a>
-    <a href="https://www.tiktok.com/@yendo_plus" target="_blank">TikTok</a>
+    <a href="https://www.facebook.com/Yendoplus" target="_blank" class="social-icon" aria-label="Facebook"><img src="facebook.jpg" alt="Facebook"></a>
+    <a href="https://www.instagram.com/yendo_plus/" target="_blank" class="social-icon" aria-label="Instagram"><img src="instagram.jpg" alt="Instagram"></a>
+    <a href="https://www.tiktok.com/@yendo_plus" target="_blank" class="social-icon" aria-label="TikTok"><img src="tiktok.jpg" alt="TikTok"></a>
     <button id="themeToggle" class="theme-switch" aria-label="Cambiar tema" aria-pressed="false">
       <span class="theme-switch-track">
         <span class="theme-switch-icon">☀️</span>
@@ -177,7 +177,7 @@ function attachHandlers(){
       document.querySelectorAll('[data-cat]').forEach(x=>x.classList.remove('active'));
       document.querySelectorAll(`[data-cat="${currentCat}"]`).forEach(x=>x.classList.add('active'));
       renderProducts();
-      if(el.classList.contains('cat-row')){
+      if(!el.closest('#filterBar')){
         document.getElementById('catalogo').scrollIntoView({behavior:'smooth'});
       }
     });
@@ -221,7 +221,7 @@ document.getElementById('prodContainer').addEventListener('click', (e)=>{
   if(!btn || btn.disabled) return;
   const p = allProducts.find(x => x.id === btn.dataset.id);
   if(!p) return;
-  addToCart({ id:p.id, name:p.name, price:p.price, img:`${p.id}.jpg` });
+  addToCart({ id:p.id, name:p.name, price:p.price, img:`${p.id}.jpg`, stock: parseInt(p.stock) || 0 });
   const original = btn.textContent;
   btn.textContent = 'Agregado al carrito de compras';
   setTimeout(()=>{ btn.textContent = original; }, 1200);
