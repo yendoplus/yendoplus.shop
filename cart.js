@@ -1,5 +1,11 @@
 const CART_KEY = 'yendo_cart_v1';
 
+function fmtPrice(n){
+  const num = parseFloat(n);
+  if(isNaN(num)) return 'S/0.00';
+  return `S/${num.toFixed(2)}`;
+}
+
 function getCart(){
   try{ return JSON.parse(localStorage.getItem(CART_KEY)) || []; }
   catch(e){ return []; }
@@ -66,7 +72,7 @@ function renderMiniCart(){
   const countLabel = document.getElementById('miniCartCount');
   const totalLabel = document.getElementById('miniCartTotal');
   if(countLabel) countLabel.textContent = `${cartCount()} item${cartCount()===1?'':'s'}`;
-  if(totalLabel) totalLabel.textContent = `S/${cartTotal().toFixed(0)}`;
+  if(totalLabel) totalLabel.textContent = fmtPrice(cartTotal());
 
   const itemsEl = document.getElementById('miniCartItems');
   if(!itemsEl) return;
@@ -81,7 +87,7 @@ function renderMiniCart(){
       <img src="${i.img}" alt="${i.name}" onerror="this.style.opacity=0">
       <div class="mc-info">
         <div class="mc-name">${i.name}</div>
-        <div class="mc-price">S/${i.price}</div>
+        <div class="mc-price">${fmtPrice(i.price)}</div>
         <div class="mc-qty-controls">
           <button type="button" class="mc-qty-minus${i.qty<=1?' mc-qty-trash':''}" data-id="${i.id}" aria-label="${i.qty<=1?'Eliminar':'Restar'}">${i.qty<=1?'🗑':'−'}</button>
           <span class="mc-qty-value">${i.qty}</span>
