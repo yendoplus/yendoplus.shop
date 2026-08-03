@@ -105,6 +105,8 @@
   <img id="imgModalPic" src="" alt="">
 </div>
 
+<button id="backToTop" class="back-to-top" aria-label="Subir arriba">↑</button>
+
 <script src="theme.js"></script>
 <script src="cart.js"></script>
 <script>
@@ -144,12 +146,10 @@ let currentCat='all';
 function render(){
   const cats=[...new Set(allProducts.map(p=>p.category).filter(Boolean))];
 
-  // Nav
   const nav=document.getElementById('navCats');
   nav.innerHTML='<button data-cat="all" class="active">Todo</button>' +
     cats.map(c=>`<button data-cat="${c}">${c}</button>`).join('');
 
-  // Category rows (estilo HLJ)
   const catList=document.getElementById('catList');
   catList.innerHTML = cats.map((c,i)=>{
     const items=allProducts.filter(p=>p.category===c);
@@ -165,7 +165,6 @@ function render(){
     </div>`;
   }).join('');
 
-  // Filter bar
   const fb=document.getElementById('filterBar');
   fb.innerHTML = '<button data-cat="all" class="active">Todo</button>' +
     cats.map(c=>`<button data-cat="${c}">${c}</button>`).join('');
@@ -268,6 +267,17 @@ document.getElementById('imgModal').addEventListener('click', (e)=>{
 document.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape') closeImgModal();
 });
+
+/* ===== BOTON SUBIR ARRIBA ===== */
+const backToTop = document.getElementById('backToTop');
+if(backToTop){
+  window.addEventListener('scroll', ()=>{
+    backToTop.classList.toggle('show', window.scrollY > 400);
+  });
+  backToTop.addEventListener('click', ()=>{
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+}
 </script>
 
 </body>
