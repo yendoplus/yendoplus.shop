@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Yendo Plus — Figuras, Tomica y Coleccionables</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#E2231A;
+    --red-dark:#A9160F;
+    --gray:#8A8A8A;
+    --gray-line:#E4E4E4;
+    --ink:#141414;
+    --white:#ffffff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Work Sans', sans-serif;
+    color:var(--ink);
+    background:var(--white);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{
+    font-family:'Anton', sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    line-height:1.02;
+  }
+  a{color:inherit;text-decoration:none;}
+  img{display:block;max-width:100%;}
+
+  header.site{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 5vw;
+    border-bottom:1px solid var(--gray-line);
+    position:sticky;top:0;background:var(--white);z-index:50;
+  }
+  .logo-wrap{display:flex;align-items:center;gap:0;}
+  .logo-wrap img{
+    height:44px;width:44px;object-fit:contain;
+  }
+  nav.main{display:flex;gap:30px;}
+  nav.main button{
+    font-family:'Work Sans';font-weight:700;font-size:13px;
+    text-transform:uppercase;letter-spacing:0.6px;
+    background:none;border:none;cursor:pointer;color:var(--ink);
+    padding:6px 0;border-bottom:2px solid transparent;
+    transition:border-color .15s, color .15s;
+  }
+  nav.main button:hover, nav.main button.active{border-color:var(--red);color:var(--red-dark);}
+  .socials-top{display:flex;gap:16px;}
+  .socials-top a{
+    font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+    color:var(--gray);transition:color .15s;
+  }
+  .socials-top a:hover{color:var(--red);}
+
+  .hero{
+    padding:64px 5vw 48px;
+    border-bottom:1px solid var(--gray-line);
+  }
+  .hero-copy{max-width:640px;}
+  .hero-copy .eyebrow{
+    color:var(--red);font-weight:800;letter-spacing:2.5px;font-size:12px;
+    margin-bottom:16px;display:block;
+  }
+  .hero-copy h1{font-size:clamp(34px,5.2vw,58px);margin-bottom:16px;}
+  .hero-copy h1 .yen{color:var(--red);}
+  .hero-copy p{color:#555;font-size:15.5px;line-height:1.65;margin-bottom:22px;max-width:460px;}
+  .hero-cta{
+    display:inline-flex;align-items:center;gap:8px;
+    color:var(--ink);
+    font-weight:800;text-transform:uppercase;letter-spacing:0.6px;font-size:13px;
+    padding-bottom:4px;border-bottom:2px solid var(--red);
+  }
+  .hero-cta:hover{color:var(--red-dark);}
+
+  .section{padding:52px 5vw;border-bottom:1px solid var(--gray-line);}
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:26px;flex-wrap:wrap;gap:10px;}
+  .section-head h2{font-size:clamp(22px,2.8vw,30px);}
+  .section-head .sub{color:var(--gray);font-size:13px;font-weight:600;}
+
+  .cat-list{display:flex;flex-direction:column;}
+  .cat-row{
+    display:flex;align-items:center;gap:28px;
+    padding:22px 4px;border-top:1px solid var(--gray-line);
+    cursor:pointer;transition:background .15s;
+  }
+  .cat-list .cat-row:last-child{border-bottom:1px solid var(--gray-line);}
+  .cat-row:hover{background:#fafafa;}
+  .cat-row .thumb{
+    width:84px;height:84px;flex:none;background:var(--gray-line);overflow:hidden;
+  }
+  .cat-row .thumb img{width:100%;height:100%;object-fit:cover;}
+  .cat-row .info{flex:1;min-width:0;}
+  .cat-row .info .num{font-size:11px;font-weight:800;color:var(--gray);letter-spacing:1px;margin-bottom:4px;}
+  .cat-row .info h3{font-size:22px;margin-bottom:4px;}
+  .cat-row .info p{font-size:13.5px;color:var(--gray);max-width:520px;}
+  .cat-row .count{
+    font-family:'Anton';font-size:26px;color:var(--red);flex:none;
+    min-width:60px;text-align:right;
+  }
+  .cat-row .count span{display:block;font-family:'Work Sans';font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;}
+  .cat-row.active{background:var(--ink);}
+  .cat-row.active .info h3, .cat-row.active .info .num{color:var(--white);}
+  .cat-row.active .info p{color:#bbb;}
+  .cat-row.active .count{color:var(--white);}
+  .cat-row.active .count span{color:#999;}
+
+  .filter-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px;}
+  .filter-bar button{
+    font-family:'Work Sans';font-weight:700;font-size:12.5px;text-transform:uppercase;
+    letter-spacing:.5px;padding:8px 16px;border:1px solid var(--ink);
+    background:var(--white);cursor:pointer;transition:.15s;
+  }
+  .filter-bar button.active{background:var(--ink);border-color:var(--ink);color:var(--white);}
+  .filter-bar button:hover:not(.active){border-color:var(--red);color:var(--red-dark);}
+
+  .prod-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:22px 18px;
+  }
+  .prod-card{
+    display:flex;flex-direction:column;
+  }
+  .prod-img{
+    aspect-ratio:1/1;background:#f7f7f7;overflow:hidden;position:relative;margin-bottom:12px;
+  }
+  .prod-img img{width:100%;height:100%;object-fit:cover;}
+  .stock-badge{
+    position:absolute;top:8px;left:8px;font-size:9.5px;font-weight:800;letter-spacing:.5px;
+    text-transform:uppercase;padding:3px 7px;color:var(--white);
+  }
+  .stock-badge.in{background:var(--ink);}
+  .stock-badge.out{background:var(--gray);}
+  .prod-body{display:flex;flex-direction:column;flex:1;gap:6px;}
+  .prod-cat{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--red);}
+  .prod-name{font-size:13px;font-weight:600;line-height:1.35;flex:1;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+  .prod-footer{display:flex;align-items:center;justify-content:space-between;margin-top:4px;border-top:1px solid var(--gray-line);padding-top:8px;}
+  .price{font-family:'Anton';font-size:16px;color:var(--ink);}
+  .price .yn{color:var(--red);margin-right:2px;}
+  .prod-link{font-size:11px;font-weight:700;color:var(--gray);}
+  .prod-link:hover{color:var(--red-dark);}
+
+  .empty-state{padding:50px 20px;text-align:center;color:var(--gray);font-weight:600;}
+  .loading{padding:50px 20px;text-align:center;color:var(--gray);font-weight:600;}
+
+  footer.site{padding:44px 5vw 26px;}
+  .foot-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:30px;margin-bottom:30px;}
+  .foot-brand img{height:38px;width:38px;object-fit:contain;margin-bottom:12px;}
+  .foot-brand p{max-width:320px;color:var(--gray);font-size:13.5px;line-height:1.6;}
+  .foot-socials{display:flex;gap:16px;margin-top:14px;}
+  .foot-socials a{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--ink);border-bottom:1px solid var(--ink);}
+  .foot-socials a:hover{color:var(--red-dark);border-color:var(--red-dark);}
+  .foot-cols{display:flex;gap:60px;flex-wrap:wrap;}
+  .foot-col h4{font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--gray);margin-bottom:14px;}
+  .foot-col a{display:block;font-size:14px;color:var(--ink);margin-bottom:9px;}
+  .foot-col a:hover{color:var(--red-dark);}
+  .foot-bottom{border-top:1px solid var(--gray-line);padding-top:18px;font-size:12px;color:var(--gray);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+
+  @media (max-width:800px){
+    header.site{flex-wrap:wrap;gap:14px;}
+    nav.main{order:3;width:100%;overflow-x:auto;gap:18px;}
+    .cat-row{gap:16px;}
+    .cat-row .thumb{width:64px;height:64px;}
+    .cat-row .info h3{font-size:18px;}
+    .cat-row .info p{display:none;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="logo-wrap">
+    <img src="logo.jpg" alt="Yendo Plus">
+  </div>
+  <nav class="main" id="navCats"></nav>
+  <div class="socials-top">
+    <a href="https://www.facebook.com/Yendoplus" target="_blank">Facebook</a>
+    <a href="https://www.instagram.com/yendo_plus/" target="_blank">Instagram</a>
+    <a href="https://www.tiktok.com/@yendo_plus" target="_blank">TikTok</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-copy">
+    <span class="eyebrow">FIGURAS · TOMICA · HOT WHEELS</span>
+    <h1>Coleccionables<br>al mejor <span class="yen">¥</span>precio</h1>
+    <p>Figuras de anime, autos a escala y coleccionables importados, con catálogo actualizado directo desde nuestro inventario.</p>
+    <a class="hero-cta" href="#categorias">Ver categorías ↓</a>
+  </div>
+</section>
+
+<section class="section" id="categorias">
+  <div class="section-head">
+    <h2>Categorías</h2>
+    <span class="sub">Elige un tipo de producto</span>
+  </div>
+  <div class="cat-list" id="catList"></div>
+</section>
+
+<section class="section" id="catalogo" style="border-bottom:none;">
+  <div class="section-head">
+    <h2>Catálogo</h2>
+    <span class="sub" id="countLabel">Cargando…</span>
+  </div>
+  <div class="filter-bar" id="filterBar"></div>
+  <div id="prodContainer"><div class="loading">Cargando productos…</div></div>
+</section>
+
+<footer class="site">
+  <div class="foot-top">
+    <div class="foot-brand">
+      <img src="logo.jpg" alt="Yendo Plus">
+      <p>Figuras de anime, Tomica, Hot Wheels y coleccionables. Catálogo actualizado directo desde nuestro inventario.</p>
+      <div class="foot-socials">
+        <a href="https://www.facebook.com/Yendoplus" target="_blank">Facebook</a>
+        <a href="https://www.instagram.com/yendo_plus/" target="_blank">Instagram</a>
+        <a href="https://www.tiktok.com/@yendo_plus" target="_blank">TikTok</a>
+      </div>
+    </div>
+    <div class="foot-cols">
+      <div class="foot-col">
+        <h4>Categorías</h4>
+        <div id="footCats"></div>
+      </div>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <span>© 2026 Yendo Plus. Todos los derechos reservados.</span>
+    <span>Precios en ¥ (yenes)</span>
+  </div>
+</footer>
+
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS10PBfQSSGt0J_UBzOrnICPcVjKV1smtbm36aBdPuokZaaiJgdScdwOWig8PqIDJyBTIX2fk4q4QzU/pub?output=csv";
+
+function parseCSV(text){
+  const rows=[]; let row=[]; let field=''; let inQuotes=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(inQuotes){
+      if(c=='"'){ if(text[i+1]=='"'){field+='"';i++;} else inQuotes=false; }
+      else field+=c;
+    } else {
+      if(c=='"') inQuotes=true;
+      else if(c==','){ row.push(field); field=''; }
+      else if(c=='\n'){ row.push(field); rows.push(row); row=[]; field=''; }
+      else if(c=='\r'){ /* skip */ }
+      else field+=c;
+    }
+  }
+  if(field.length||row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r=>r.length>1);
+}
+
+function toObjects(rows){
+  const headers=rows[0].map(h=>h.trim());
+  return rows.slice(1).map(r=>{
+    const o={};
+    headers.forEach((h,i)=>o[h]=(r[i]||'').trim());
+    return o;
+  });
+}
+
+let allProducts=[];
+let currentCat='all';
+
+function render(){
+  const cats=[...new Set(allProducts.map(p=>p.category).filter(Boolean))];
+
+  const nav=document.getElementById('navCats');
+  nav.innerHTML='<button data-cat="all" class="active">Todo</button>' +
+    cats.map(c=>`<button data-cat="${c}">${c}</button>`).join('');
+
+  const catList=document.getElementById('catList');
+  catList.innerHTML = cats.map((c,i)=>{
+    const items=allProducts.filter(p=>p.category===c);
+    const rep=items.find(p=>p.id) || {};
+    return `<div class="cat-row" data-cat="${c}">
+      <div class="thumb"><img src="${rep.id}.jpg" alt="${c}" loading="lazy" onerror="if(this.src!=='${rep.img||''}'&&'${rep.img||''}'){this.src='${rep.img}';}else{this.style.opacity=0;}"></div>
+      <div class="info">
+        <div class="num">${String(i+1).padStart(2,'0')}</div>
+        <h3>${c}</h3>
+        <p>Explora nuestra selección de ${c.toLowerCase()} disponible en stock y en preventa.</p>
+      </div>
+      <div class="count">${items.length}<span>ítems</span></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('footCats').innerHTML = cats.map(c=>`<a href="#catalogo" data-cat="${c}" class="foot-cat-link">${c}</a>`).join('');
+
+  const fb=document.getElementById('filterBar');
+  fb.innerHTML = '<button data-cat="all" class="active">Todo</button>' +
+    cats.map(c=>`<button data-cat="${c}">${c}</button>`).join('');
+
+  attachHandlers();
+  renderProducts();
+}
+
+function attachHandlers(){
+  document.querySelectorAll('[data-cat]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.preventDefault();
+      currentCat = el.getAttribute('data-cat');
+      document.querySelectorAll('[data-cat]').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll(`[data-cat="${currentCat}"]`).forEach(x=>x.classList.add('active'));
+      renderProducts();
+      if(el.classList.contains('foot-cat-link') || el.classList.contains('cat-row')){
+        document.getElementById('catalogo').scrollIntoView({behavior:'smooth'});
+      }
+    });
+  });
+}
+
+function renderProducts(){
+  const list = currentCat==='all' ? allProducts : allProducts.filter(p=>p.category===currentCat);
+  const container=document.getElementById('prodContainer');
+  document.getElementById('countLabel').textContent = `${list.length} producto${list.length===1?'':'s'}`;
+
+  if(list.length===0){
+    container.innerHTML='<div class="empty-state">No hay productos en esta categoría por ahora.</div>';
+    return;
+  }
+
+  container.innerHTML = `<div class="prod-grid">${list.map(p=>{
+    const inStock = p.stock==='1' || p.stock==='true' || p.stock==='Sí';
+    return `<div class="prod-card">
+      <div class="prod-img">
+        <span class="stock-badge ${inStock?'in':'out'}">${inStock?'En stock':'Agotado'}</span>
+        <img src="${p.id}.jpg" alt="${p.name}" loading="lazy" onerror="if(this.src!=='${p.img}'){this.src='${p.img}';}else{this.style.display='none';}">
+      </div>
+      <div class="prod-body">
+        <span class="prod-cat">${p.category||''}</span>
+        <div class="prod-name">${p.name}</div>
+        <div class="prod-footer">
+          <div class="price"><span class="yn">¥</span>${p.price||'—'}</div>
+          <a class="prod-link" href="${p.url}" target="_blank">Ver ficha →</a>
+        </div>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+fetch(CSV_URL)
+  .then(r=>r.text())
+  .then(text=>{
+    const rows=parseCSV(text);
+    allProducts=toObjects(rows).filter(p=>p.name);
+    render();
+  })
+  .catch(err=>{
+    document.getElementById('prodContainer').innerHTML =
+      '<div class="empty-state">No se pudo cargar el catálogo en este momento. Verifica tu conexión o intenta más tarde.</div>';
+  });
+</script>
+
+</body>
+</html>
