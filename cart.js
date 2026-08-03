@@ -83,7 +83,7 @@ function renderMiniCart(){
         <div class="mc-name">${i.name}</div>
         <div class="mc-price">S/${i.price}</div>
         <div class="mc-qty-controls">
-          <button type="button" class="mc-qty-minus" data-id="${i.id}" aria-label="Restar">−</button>
+          <button type="button" class="mc-qty-minus${i.qty<=1?' mc-qty-trash':''}" data-id="${i.id}" aria-label="${i.qty<=1?'Eliminar':'Restar'}">${i.qty<=1?'🗑':'−'}</button>
           <span class="mc-qty-value">${i.qty}</span>
           <button type="button" class="mc-qty-plus" data-id="${i.id}" aria-label="Sumar">+</button>
         </div>
