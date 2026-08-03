@@ -1,269 +1,145 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>Yendo Plus — Figuras, Tomica y Coleccionables</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
+const CART_KEY = 'yendo_cart_v1';
 
-<header class="site">
-  <div class="logo-wrap">
-    <img src="logo.jpg" alt="Yendo Plus">
-  </div>
-  <nav class="main" id="navCats"></nav>
-  <div class="socials-top">
-    <a href="https://www.facebook.com/Yendoplus" target="_blank" class="social-icon" aria-label="Facebook"><img src="facebook.jpg" alt="Facebook"></a>
-    <a href="https://www.instagram.com/yendo_plus/" target="_blank" class="social-icon" aria-label="Instagram"><img src="instagram.jpg" alt="Instagram"></a>
-    <a href="https://www.tiktok.com/@yendo_plus" target="_blank" class="social-icon" aria-label="TikTok"><img src="tiktok.jpg" alt="TikTok"></a>
-    <button id="themeToggle" class="theme-switch" aria-label="Cambiar tema" aria-pressed="false">
-      <span class="theme-switch-track">
-        <span class="theme-switch-icon">☀️</span>
-        <span class="theme-switch-icon">🌙</span>
-        <span class="theme-switch-thumb"></span>
-      </span>
-    </button>
-    <div class="cart-wrap" id="cartWrap">
-      <button id="cartToggle" class="cart-link" aria-label="Ver carrito">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-        Carrito <span id="cartBadge" class="cart-badge">0</span>
-      </button>
-      <div class="mini-cart" id="miniCart">
-        <div class="mini-cart-top">
-          <span id="miniCartCount">0 items</span>
-          <span id="miniCartTotal">S/0</span>
-        </div>
-        <a href="cart.html" class="mini-cart-checkout">IR AL CARRITO Y PAGAR</a>
-        <div class="mini-cart-items" id="miniCartItems"></div>
-      </div>
-    </div>
-  </div>
-</header>
+function getCart(){
+  try{ return JSON.parse(localStorage.getItem(CART_KEY)) || []; }
+  catch(e){ return []; }
+}
 
-<section class="hero">
-  <div class="hero-copy">
-    <span class="eyebrow">FIGURAS · TOMICA · HOT WHEELS</span>
-    <h1><span class="yen">YEN</span><span class="d">D</span><span class="o">O</span> POR LAS<br>MEJORES PIEZAS</h1>
-    <p>Como el yen japonés, en Yendo Plus siempre estamos en movimiento: figuras de anime, autos a escala y coleccionables importados, con catálogo actualizado directo desde nuestro inventario.</p>
-    <a class="hero-cta" href="#categorias">Ver categorías ↓</a>
-  </div>
-</section>
+function saveCart(cart){
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  updateCartBadge();
+  renderMiniCart();
+}
 
-<section class="section" id="categorias">
-  <div class="section-head">
-    <h2>Categorías</h2>
-    <span class="sub">Elige un tipo de producto</span>
-  </div>
-  <div class="cat-list" id="catList"></div>
-</section>
+function addToCart(item){
+  const cart = getCart();
+  const existing = cart.find(i => i.id === item.id);
+  if(existing){ existing.qty += 1; }
+  else { cart.push({ id:item.id, name:item.name, price:item.price, img:item.img, qty:1 }); }
+  saveCart(cart);
+}
 
-<section class="section" id="catalogo" style="border-bottom:none;">
-  <div class="section-head">
-    <h2>Catálogo</h2>
-    <span class="sub" id="countLabel">Cargando…</span>
-  </div>
-  <div class="filter-bar" id="filterBar"></div>
-  <div id="prodContainer"><div class="loading">Cargando productos…</div></div>
-</section>
+function removeFromCart(id){
+  saveCart(getCart().filter(i => i.id !== id));
+}
 
-<footer class="site">
-  <div class="foot-grid">
-    <div class="foot-col-left">
-      <img src="logo.jpg" alt="Yendo Plus" class="foot-logo">
-      <p>Figuras de anime, Tomica, Hot Wheels y coleccionables. Catálogo actualizado directo desde nuestro inventario.</p>
-    </div>
-
-    <div class="foot-col-center">
-      <div class="foot-icons-row">
-        <a href="https://www.facebook.com/Yendoplus" target="_blank" class="foot-icon-circle" aria-label="Facebook"><img src="facebook.jpg" alt="Facebook"></a>
-        <a href="https://www.instagram.com/yendo_plus/" target="_blank" class="foot-icon-circle" aria-label="Instagram"><img src="instagram.jpg" alt="Instagram"></a>
-        <a href="https://www.tiktok.com/@yendo_plus" target="_blank" class="foot-icon-circle" aria-label="TikTok"><img src="tiktok.jpg" alt="TikTok"></a>
-      </div>
-    </div>
-
-    <div class="foot-col-right">
-      <p class="foot-info"><strong>Nos ubicamos en:</strong><br>Cedros de Villa, Chorrillos</p>
-      <p class="foot-info"><strong>Contacto:</strong> 915 276 379</p>
-      <p class="foot-info"><strong>Correo:</strong> yendoplus.pe@gmail.com</p>
-      <span class="price-pill">Precios en S/ (Soles)</span>
-    </div>
-  </div>
-
-  <div class="foot-bottom">
-    <span>© 2026 Yendo Plus. Todos los derechos reservados.</span>
-  </div>
-</footer>
-
-<div class="img-modal" id="imgModal">
-  <button class="img-modal-close" id="imgModalClose" aria-label="Cerrar">✕</button>
-  <img id="imgModalPic" src="" alt="">
-</div>
-
-<script src="theme.js"></script>
-<script src="cart.js"></script>
-<script>
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS10PBfQSSGt0J_UBzOrnICPcVjKV1smtbm36aBdPuokZaaiJgdScdwOWig8PqIDJyBTIX2fk4q4QzU/pub?output=csv";
-
-function parseCSV(text){
-  const rows=[]; let row=[]; let field=''; let inQuotes=false;
-  for(let i=0;i<text.length;i++){
-    const c=text[i];
-    if(inQuotes){
-      if(c=='"'){ if(text[i+1]=='"'){field+='"';i++;} else inQuotes=false; }
-      else field+=c;
-    } else {
-      if(c=='"') inQuotes=true;
-      else if(c==','){ row.push(field); field=''; }
-      else if(c=='\n'){ row.push(field); rows.push(row); row=[]; field=''; }
-      else if(c=='\r'){ /* skip */ }
-      else field+=c;
-    }
+function setQty(id, qty){
+  const cart = getCart();
+  const item = cart.find(i => i.id === id);
+  if(item){
+    item.qty = Math.max(1, parseInt(qty) || 1);
+    saveCart(cart);
   }
-  if(field.length||row.length){ row.push(field); rows.push(row); }
-  return rows.filter(r=>r.length>1);
 }
 
-function toObjects(rows){
-  const headers=rows[0].map(h=>h.trim());
-  return rows.slice(1).map(r=>{
-    const o={};
-    headers.forEach((h,i)=>o[h]=(r[i]||'').trim());
-    return o;
-  });
+function clearCart(){
+  saveCart([]);
 }
 
-let allProducts=[];
-let currentCat='all';
+function cartCount(){
+  return getCart().reduce((sum, i) => sum + i.qty, 0);
+}
 
-function render(){
-  const cats=[...new Set(allProducts.map(p=>p.category).filter(Boolean))];
+function cartTotal(){
+  return getCart().reduce((sum, i) => sum + (parseFloat(i.price) || 0) * i.qty, 0);
+}
 
-  const nav=document.getElementById('navCats');
-  nav.innerHTML='<button data-cat="all" class="active">Todo</button>' +
-    cats.map(c=>`<button data-cat="${c}">${c}</button>`).join('');
+function updateCartBadge(){
+  const badge = document.getElementById('cartBadge');
+  if(!badge) return;
+  const n = cartCount();
+  badge.textContent = n;
+  badge.style.display = n > 0 ? 'inline-flex' : 'none';
+}
 
-  const catList=document.getElementById('catList');
-  catList.innerHTML = cats.map((c,i)=>{
-    const items=allProducts.filter(p=>p.category===c);
-    const rep=items.find(p=>p.id) || {};
-    return `<div class="cat-row" data-cat="${c}">
-      <div class="thumb"><img src="${rep.id}.jpg" alt="${c}" loading="lazy" onerror="if(this.src!=='${rep.img||''}'&&'${rep.img||''}'){this.src='${rep.img}';}else{this.style.opacity=0;}"></div>
-      <div class="info">
-        <div class="num">${String(i+1).padStart(2,'0')}</div>
-        <h3>${c}</h3>
-        <p>Explora nuestra selección de ${c.toLowerCase()} disponible en stock y en preventa.</p>
+function renderMiniCart(){
+  const panel = document.getElementById('miniCart');
+  if(!panel) return;
+  const cart = getCart();
+
+  const countLabel = document.getElementById('miniCartCount');
+  const totalLabel = document.getElementById('miniCartTotal');
+  if(countLabel) countLabel.textContent = `${cartCount()} item${cartCount()===1?'':'s'}`;
+  if(totalLabel) totalLabel.textContent = `S/${cartTotal().toFixed(0)}`;
+
+  const itemsEl = document.getElementById('miniCartItems');
+  if(!itemsEl) return;
+
+  if(cart.length === 0){
+    itemsEl.innerHTML = '<div class="mini-cart-empty">Tu carrito está vacío.</div>';
+    return;
+  }
+
+  itemsEl.innerHTML = cart.map(i => `
+    <div class="mini-cart-row">
+      <img src="${i.img}" alt="${i.name}" onerror="this.style.opacity=0">
+      <div class="mc-info">
+        <div class="mc-name">${i.name}</div>
+        <div class="mc-price">S/${i.price}</div>
+        <div class="mc-qty-controls">
+          <button type="button" class="mc-qty-minus" data-id="${i.id}" aria-label="Restar">−</button>
+          <span class="mc-qty-value">${i.qty}</span>
+          <button type="button" class="mc-qty-plus" data-id="${i.id}" aria-label="Sumar">+</button>
+        </div>
       </div>
-      <div class="count">${items.length}<span>ítems</span></div>
-    </div>`;
-  }).join('');
+      <button type="button" class="mini-cart-remove" data-id="${i.id}" aria-label="Quitar">✕</button>
+    </div>
+  `).join('');
 
-  const fb=document.getElementById('filterBar');
-  fb.innerHTML = '<button data-cat="all" class="active">Todo</button>' +
-    cats.map(c=>`<button data-cat="${c}">${c}</button>`).join('');
+  itemsEl.querySelectorAll('.mini-cart-remove').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeFromCart(btn.dataset.id);
+    });
+  });
 
-  attachHandlers();
-  renderProducts();
-}
+  itemsEl.querySelectorAll('.mc-qty-minus').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const item = getCart().find(i => i.id === btn.dataset.id);
+      if(!item) return;
+      if(item.qty <= 1){ removeFromCart(item.id); }
+      else { setQty(item.id, item.qty - 1); }
+    });
+  });
 
-function attachHandlers(){
-  document.querySelectorAll('[data-cat]').forEach(el=>{
-    el.addEventListener('click', (e)=>{
-      e.preventDefault();
-      currentCat = el.getAttribute('data-cat');
-      document.querySelectorAll('[data-cat]').forEach(x=>x.classList.remove('active'));
-      document.querySelectorAll(`[data-cat="${currentCat}"]`).forEach(x=>x.classList.add('active'));
-      renderProducts();
-      if(!el.closest('#filterBar')){
-        document.getElementById('catalogo').scrollIntoView({behavior:'smooth'});
-      }
+  itemsEl.querySelectorAll('.mc-qty-plus').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const item = getCart().find(i => i.id === btn.dataset.id);
+      if(!item) return;
+      setQty(item.id, item.qty + 1);
     });
   });
 }
 
-function renderProducts(){
-  const list = currentCat==='all' ? allProducts : allProducts.filter(p=>p.category===currentCat);
-  const container=document.getElementById('prodContainer');
-  document.getElementById('countLabel').textContent = `${list.length} producto${list.length===1?'':'s'}`;
+function toggleMiniCart(){
+  const panel = document.getElementById('miniCart');
+  if(!panel) return;
+  const willOpen = !panel.classList.contains('open');
+  panel.classList.toggle('open', willOpen);
+  if(willOpen) renderMiniCart();
+}
 
-  if(list.length===0){
-    container.innerHTML='<div class="empty-state">No hay productos en esta categoría por ahora.</div>';
-    return;
+function closeMiniCart(){
+  const panel = document.getElementById('miniCart');
+  if(panel) panel.classList.remove('open');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateCartBadge();
+  renderMiniCart();
+
+  const toggle = document.getElementById('cartToggle');
+  if(toggle){
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMiniCart();
+    });
   }
 
-  container.innerHTML = `<div class="prod-grid">${list.map(p=>{
-    const inStock = p.stock==='1' || p.stock==='true' || p.stock==='Sí';
-    return `<div class="prod-card">
-      <div class="prod-img ${inStock?'':'out-of-stock'}">
-        <span class="stock-badge ${inStock?'in':'out'}">${inStock?'En stock':'Agotado'}</span>
-        <img src="${p.id}.jpg" alt="${p.name}" loading="lazy" class="zoomable" onerror="if(this.src!=='${p.img}'){this.src='${p.img}';}else{this.style.display='none';}">
-      </div>
-      <div class="prod-body">
-        <span class="prod-cat">${p.category||''}</span>
-        <div class="prod-name">${p.name}</div>
-        <div class="prod-footer">
-          <div class="price"><span class="yn">S/</span>${p.price||'—'}</div>
-          <a class="prod-link" href="${p.url}" target="_blank">Ver ficha →</a>
-        </div>
-        ${inStock
-          ? `<button class="add-cart-btn" data-id="${p.id}">Agregar al carro</button>`
-          : `<button class="add-cart-btn" disabled>Agotado</button>`}
-      </div>
-    </div>`;
-  }).join('')}</div>`;
-}
-
-document.getElementById('prodContainer').addEventListener('click', (e)=>{
-  const btn = e.target.closest('.add-cart-btn');
-  if(!btn || btn.disabled) return;
-  const p = allProducts.find(x => x.id === btn.dataset.id);
-  if(!p) return;
-  addToCart({ id:p.id, name:p.name, price:p.price, img:`${p.id}.jpg`, stock: parseInt(p.stock) || 0 });
-  const original = btn.textContent;
-  btn.textContent = 'Agregado al carrito de compras';
-  setTimeout(()=>{ btn.textContent = original; }, 1200);
-});
-
-fetch(CSV_URL)
-  .then(r=>r.text())
-  .then(text=>{
-    const rows=parseCSV(text);
-    allProducts=toObjects(rows).filter(p=>p.name);
-    render();
-  })
-  .catch(err=>{
-    document.getElementById('prodContainer').innerHTML =
-      '<div class="empty-state">No se pudo cargar el catálogo en este momento. Verifica tu conexión o intenta más tarde.</div>';
+  document.addEventListener('click', (e) => {
+    const wrap = document.getElementById('cartWrap');
+    if(wrap && !wrap.contains(e.target)) closeMiniCart();
   });
-
-/* ===== ZOOM DE IMAGEN ===== */
-document.getElementById('prodContainer').addEventListener('click', (e)=>{
-  const img = e.target.closest('.zoomable');
-  if(!img) return;
-  openImgModal(img.src, img.alt);
 });
-
-function openImgModal(src, alt){
-  document.getElementById('imgModalPic').src = src;
-  document.getElementById('imgModalPic').alt = alt || '';
-  document.getElementById('imgModal').classList.add('open');
-}
-
-function closeImgModal(){
-  document.getElementById('imgModal').classList.remove('open');
-}
-
-document.getElementById('imgModalClose').addEventListener('click', closeImgModal);
-document.getElementById('imgModal').addEventListener('click', (e)=>{
-  if(e.target.id === 'imgModal') closeImgModal();
-});
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape') closeImgModal();
-});
-</script>
-
-</body>
-</html>
