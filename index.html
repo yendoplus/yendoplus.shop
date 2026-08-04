@@ -1,13 +1,11 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
+<html lang="es"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>Yendo Plus — Figuras, Tomica y Coleccionables</title>
 <link rel="icon" type="image/jpeg" href="logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Work+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -55,21 +53,13 @@
   </div>
 </section>
 
-<section class="section" id="categorias">
+<section class="section" id="categorias" style="border-bottom:none;">
   <div class="section-head">
     <h2>Categorías</h2>
-    <span class="sub">Elige un tipo de producto</span>
+    <span class="sub" id="catSub">Elige un tipo de producto</span>
   </div>
-  <div class="cat-list" id="catList"></div>
-</section>
-
-<section class="section" id="catalogo" style="border-bottom:none;">
-  <div class="section-head">
-    <h2>Catálogo</h2>
-    <span class="sub" id="countLabel">Cargando…</span>
-  </div>
-  <div class="filter-bar" id="filterBar"></div>
-  <div id="prodContainer"><div class="loading">Cargando productos…</div></div>
+  <div class="cat-tiles" id="catTiles"></div>
+  <div class="sub-quickfilter" id="subQuick"></div>
 </section>
 
 <footer class="site">
@@ -110,184 +100,53 @@
 
 <script src="theme.js"></script>
 <script src="cart.js"></script>
+<script src="catalog.js"></script>
 <script>
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS10PBfQSSGt0J_UBzOrnICPcVjKV1smtbm36aBdPuokZaaiJgdScdwOWig8PqIDJyBTIX2fk4q4QzU/pub?gid=0&single=true&output=csv";
-
-function parseCSV(text){
-  const rows=[]; let row=[]; let field=''; let inQuotes=false;
-  for(let i=0;i<text.length;i++){
-    const c=text[i];
-    if(inQuotes){
-      if(c=='"'){ if(text[i+1]=='"'){field+='"';i++;} else inQuotes=false; }
-      else field+=c;
-    } else {
-      if(c=='"') inQuotes=true;
-      else if(c==','){ row.push(field); field=''; }
-      else if(c=='\n'){ row.push(field); rows.push(row); row=[]; field=''; }
-      else if(c=='\r'){ /* skip */ }
-      else field+=c;
-    }
-  }
-  if(field.length||row.length){ row.push(field); rows.push(row); }
-  return rows.filter(r=>r.length>1);
-}
-
-function toObjects(rows){
-  const headers=rows[0].map(h=>h.trim());
-  return rows.slice(1).map(r=>{
-    const o={};
-    headers.forEach((h,i)=>o[h]=(r[i]||'').trim());
-    return o;
-  });
-}
-
-function getStockNum(p){
-  const n = parseInt(p.stock);
-  return isNaN(n) ? 0 : n;
-}
-
-let allProducts=[];
-let currentCat='all';
-
-function render(){
-  const cats=[...new Set(allProducts.map(p=>p.category).filter(Boolean))];
-
-  const nav=document.getElementById('navCats');
-  nav.innerHTML='<button data-cat="all" class="active">Todo</button>' +
-    cats.map(c=>`<button data-cat="${c}">${c}</button>`).join('');
-
-  const catList=document.getElementById('catList');
-  catList.innerHTML = cats.map((c,i)=>{
-    const items=allProducts.filter(p=>p.category===c);
-    const rep=items.find(p=>p.id) || {};
-    return `<div class="cat-row" data-cat="${c}">
-      <div class="thumb"><img src="${rep.id}.jpg" alt="${c}" loading="lazy" onerror="if(this.src!=='${rep.img||''}'&&'${rep.img||''}'){this.src='${rep.img}';}else{this.style.opacity=0;}"></div>
-      <div class="info">
-        <div class="num">${String(i+1).padStart(2,'0')}</div>
-        <h3>${c}</h3>
-        <p>Explora nuestra selección de ${c.toLowerCase()} disponible en stock y en preventa.</p>
-      </div>
-      <div class="count">${items.length}<span>ítems</span></div>
-    </div>`;
-  }).join('');
-
-  const fb=document.getElementById('filterBar');
-  fb.innerHTML = '<button data-cat="all" class="active">Todo</button>' +
-    cats.map(c=>`<button data-cat="${c}">${c}</button>`).join('');
-
-  attachHandlers();
-  renderProducts();
-}
-
-function attachHandlers(){
-  document.querySelectorAll('[data-cat]').forEach(el=>{
-    el.addEventListener('click', (e)=>{
-      e.preventDefault();
-      currentCat = el.getAttribute('data-cat');
-      document.querySelectorAll('[data-cat]').forEach(x=>x.classList.remove('active'));
-      document.querySelectorAll(`[data-cat="${currentCat}"]`).forEach(x=>x.classList.add('active'));
-      renderProducts();
-      if(!el.closest('#filterBar')){
-        document.getElementById('catalogo').scrollIntoView({behavior:'smooth'});
-      }
-    });
-  });
-}
-
-function renderProducts(){
-  const list = currentCat==='all' ? allProducts : allProducts.filter(p=>p.category===currentCat);
-  const container=document.getElementById('prodContainer');
-  document.getElementById('countLabel').textContent = `${list.length} producto${list.length===1?'':'s'}`;
-
-  if(list.length===0){
-    container.innerHTML='<div class="empty-state">No hay productos en esta categoría por ahora.</div>';
+loadProducts((products, err)=>{
+  if(err){
+    document.getElementById('catTiles').innerHTML =
+      '<div class="empty-state">No se pudo cargar el catálogo en este momento. Verifica tu conexión o intenta más tarde.</div>';
     return;
   }
 
-  container.innerHTML = `<div class="prod-grid">${list.map(p=>{
-    const stockNum = getStockNum(p);
-    const inStock = stockNum > 0;
-    return `<div class="prod-card">
-      <div class="prod-img ${inStock?'':'out-of-stock'}">
-        <span class="stock-badge ${inStock?'in':'out'}">${inStock?'En stock':'Agotado'}</span>
-        <img src="${p.id}.jpg" alt="${p.name}" loading="lazy" class="zoomable" onerror="if(this.src!=='${p.img}'){this.src='${p.img}';}else{this.style.display='none';}">
-      </div>
-      <div class="prod-body">
-        <span class="prod-cat">${p.category||''}</span>
-        <div class="prod-name">${p.name}</div>
-        <div class="prod-footer">
-          <div class="price"><span class="yn">S/</span>${(parseFloat(p.price)||0).toFixed(2)}</div>
-          <a class="prod-link" href="${p.url}" target="_blank">Ver ficha →</a>
-        </div>
-        ${inStock
-          ? `<button class="add-cart-btn" data-id="${p.id}">Agregar al carro</button>`
-          : `<button class="add-cart-btn" disabled>Agotado</button>`}
-      </div>
+  const cats = [...new Set(products.map(p=>p.category).filter(Boolean))];
+
+  // ===== Nav superior con menu desplegable de subcategorias =====
+  const nav = document.getElementById('navCats');
+  nav.innerHTML = cats.map(c=>{
+    const subs = [...new Set(products.filter(p=>p.category===c).map(p=>p.subcategory).filter(Boolean))];
+    const subLinks = subs.map(s=>
+      `<a href="category.html?cat=${encodeURIComponent(c)}&sub=${encodeURIComponent(s)}">${s}</a>`
+    ).join('');
+    return `<div class="nav-item">
+      <a href="category.html?cat=${encodeURIComponent(c)}" class="nav-cat-link">${c}</a>
+      ${subs.length ? `<div class="nav-dropdown"><div class="nav-dropdown-inner">${subLinks}</div></div>` : ''}
     </div>`;
-  }).join('')}</div>`;
-}
+  }).join('');
 
-document.getElementById('prodContainer').addEventListener('click', (e)=>{
-  const btn = e.target.closest('.add-cart-btn');
-  if(!btn || btn.disabled) return;
-  const p = allProducts.find(x => x.id === btn.dataset.id);
-  if(!p) return;
-  addToCart({ id:p.id, name:p.name, price:p.price, img:`${p.id}.jpg`, stock: getStockNum(p) });
-  const original = btn.textContent;
-  btn.textContent = 'Agregado al carrito de compras';
-  setTimeout(()=>{ btn.textContent = original; }, 1200);
+  // ===== Cuadros grandes de categoria =====
+  const catTiles = document.getElementById('catTiles');
+  document.getElementById('catSub').textContent = `${products.length} productos en ${cats.length} categorías`;
+  catTiles.innerHTML = cats.map(c=>{
+    const items = products.filter(p=>p.category===c);
+    const rep = items.find(p=>p.id) || {};
+    return `<a href="category.html?cat=${encodeURIComponent(c)}" class="cat-tile">
+      <img src="${rep.id}.jpg" alt="${c}" loading="lazy" onerror="if(this.src!=='${rep.img||''}'&&'${rep.img||''}'){this.src='${rep.img}';}else{this.style.opacity=0;}">
+      <div class="cat-tile-overlay">
+        <h3>${c}</h3>
+        <span>${items.length} ítem${items.length===1?'':'s'}</span>
+      </div>
+    </a>`;
+  }).join('');
+
+  // ===== Filtro rapido de subcategorias =====
+  const allSubs = [...new Set(products.map(p=>p.subcategory).filter(Boolean))];
+  document.getElementById('subQuick').innerHTML = allSubs.length
+    ? allSubs.map(s=>`<a href="category.html?sub=${encodeURIComponent(s)}" class="subchip">${s}</a>`).join('')
+    : '';
 });
-
-fetch(CSV_URL)
-  .then(r=>r.text())
-  .then(text=>{
-    const rows=parseCSV(text);
-    allProducts=toObjects(rows).filter(p=>p.name);
-    render();
-  })
-  .catch(err=>{
-    document.getElementById('prodContainer').innerHTML =
-      '<div class="empty-state">No se pudo cargar el catálogo en este momento. Verifica tu conexión o intenta más tarde.</div>';
-    document.getElementById('catList').innerHTML =
-      '<div class="empty-state">No se pudo cargar las categorías.</div>';
-  });
-
-/* ===== ZOOM DE IMAGEN ===== */
-document.getElementById('prodContainer').addEventListener('click', (e)=>{
-  const img = e.target.closest('.zoomable');
-  if(!img) return;
-  openImgModal(img.src, img.alt);
-});
-
-function openImgModal(src, alt){
-  document.getElementById('imgModalPic').src = src;
-  document.getElementById('imgModalPic').alt = alt || '';
-  document.getElementById('imgModal').classList.add('open');
-}
-
-function closeImgModal(){
-  document.getElementById('imgModal').classList.remove('open');
-}
-
-document.getElementById('imgModalClose').addEventListener('click', closeImgModal);
-document.getElementById('imgModal').addEventListener('click', (e)=>{
-  if(e.target.id === 'imgModal') closeImgModal();
-});
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape') closeImgModal();
-});
-
-/* ===== BOTON SUBIR ARRIBA ===== */
-const backToTop = document.getElementById('backToTop');
-if(backToTop){
-  window.addEventListener('scroll', ()=>{
-    backToTop.classList.toggle('show', window.scrollY > 400);
-  });
-  backToTop.addEventListener('click', ()=>{
-    window.scrollTo({top:0, behavior:'smooth'});
-  });
-}
 </script>
 
-</body>
-</html>
+
+
+</body></html>
