@@ -489,9 +489,12 @@ footer.site{padding:60px 5vw 30px;background:var(--gray-line);}
 }
 .nav-cat-link:hover, .nav-cat-link.active{border-color:var(--red);color:var(--red-dark);}
 .nav-dropdown{
-  display:none;position:absolute;top:100%;left:0;margin-top:8px;
+  display:none;position:absolute;top:100%;left:0;padding-top:8px;
+  z-index:80;
+}
+.nav-dropdown-inner{
   background:var(--white);border:1px solid var(--ink);min-width:200px;
-  box-shadow:0 12px 28px rgba(0,0,0,.18);z-index:80;
+  box-shadow:0 12px 28px rgba(0,0,0,.18);
 }
 .nav-item:hover .nav-dropdown{display:block;}
 .nav-dropdown a{
