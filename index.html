@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Yendo Plus — Figuras, Tomica y Coleccionables</title>
+<link rel="icon" type="image/jpeg" href="logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="logo-wrap">
+    <img src="logo.jpg" alt="Yendo Plus">
+  </div>
+  <nav class="main" id="navCats"></nav>
+  <div class="socials-top">
+    <a href="https://www.facebook.com/Yendoplus" target="_blank" class="social-icon" aria-label="Facebook"><img src="facebook.jpg" alt="Facebook"></a>
+    <a href="https://www.instagram.com/yendo_plus/" target="_blank" class="social-icon" aria-label="Instagram"><img src="instagram.jpg" alt="Instagram"></a>
+    <a href="https://www.tiktok.com/@yendo_plus" target="_blank" class="social-icon" aria-label="TikTok"><img src="tiktok.jpg" alt="TikTok"></a>
+    <a href="https://wa.me/51915276379" target="_blank" class="social-icon" aria-label="WhatsApp"><img src="whatsapp.jpg" alt="WhatsApp"></a>
+    <button id="themeToggle" class="theme-switch" aria-label="Cambiar tema" aria-pressed="false">
+      <span class="theme-switch-track">
+        <span class="theme-switch-icon">☀️</span>
+        <span class="theme-switch-icon">🌙</span>
+        <span class="theme-switch-thumb"></span>
+      </span>
+    </button>
+    <div class="cart-wrap" id="cartWrap">
+      <button id="cartToggle" class="cart-link" aria-label="Ver carrito">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+        Carrito <span id="cartBadge" class="cart-badge">0</span>
+      </button>
+      <div class="mini-cart" id="miniCart">
+        <div class="mini-cart-top">
+          <span id="miniCartCount">0 items</span>
+          <span id="miniCartTotal">S/0.00</span>
+        </div>
+        <a href="cart.html" class="mini-cart-checkout">IR AL CARRITO</a>
+        <div class="mini-cart-items" id="miniCartItems"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-copy">
+    <span class="eyebrow">FIGURAS · TOMICA · HOT WHEELS</span>
+    <h1><span class="yen">YEN</span><span class="d">D</span><span class="o">O</span> POR LAS<br>MEJORES PIEZAS</h1>
+    <p>Como el yen japonés, en Yendo Plus siempre estamos en movimiento: figuras de anime, autos a escala y coleccionables importados, con catálogo actualizado directo desde nuestro inventario.</p>
+    <a class="hero-cta" href="#categorias">Ver categorías ↓</a>
+  </div>
+</section>
+
+<section class="section" id="categorias" style="border-bottom:none;">
+  <div class="section-head">
+    <h2>Categorías</h2>
+    <span class="sub" id="catSub">Elige un tipo de producto</span>
+  </div>
+  <div class="cat-tiles" id="catTiles"></div>
+  <div class="sub-quickfilter" id="subQuick"></div>
+</section>
+
+<footer class="site">
+  <div class="foot-grid">
+    <div class="foot-col-left">
+      <img src="logo.jpg" alt="Yendo Plus" class="foot-logo">
+      <p>Figuras de anime, Tomica, Hot Wheels y coleccionables. Catálogo actualizado directo desde nuestro inventario.</p>
+    </div>
+
+    <div class="foot-col-center">
+      <div class="foot-icons-row">
+        <a href="https://www.facebook.com/Yendoplus" target="_blank" class="foot-icon-circle" aria-label="Facebook"><img src="facebook.jpg" alt="Facebook"></a>
+        <a href="https://www.tiktok.com/@yendo_plus" target="_blank" class="foot-icon-circle" aria-label="TikTok"><img src="tiktok.jpg" alt="TikTok"></a>
+        <a href="https://www.instagram.com/yendo_plus/" target="_blank" class="foot-icon-circle" aria-label="Instagram"><img src="instagram.jpg" alt="Instagram"></a>
+        <a href="https://wa.me/51915276379" target="_blank" class="foot-icon-circle" aria-label="WhatsApp"><img src="whatsapp.jpg" alt="WhatsApp"></a>
+      </div>
+    </div>
+
+    <div class="foot-col-right">
+      <p class="foot-info"><strong>Nos ubicamos en:</strong><br>Cedros de Villa, Chorrillos</p>
+      <p class="foot-info"><strong>Contacto:</strong> 915 276 379</p>
+      <p class="foot-info"><strong>Correo:</strong> yendoplus.pe@gmail.com</p>
+      <span class="price-pill">Precios en S/ (Soles)</span>
+    </div>
+  </div>
+
+  <div class="foot-bottom">
+    <span>© 2026 Yendo Plus. Todos los derechos reservados.</span>
+  </div>
+</footer>
+
+<div class="img-modal" id="imgModal">
+  <button class="img-modal-close" id="imgModalClose" aria-label="Cerrar">✕</button>
+  <img id="imgModalPic" src="" alt="">
+</div>
+
+<button id="backToTop" class="back-to-top" aria-label="Subir arriba">↑</button>
+
+<script src="theme.js"></script>
+<script src="cart.js"></script>
+<script src="catalog.js"></script>
+<script>
+loadProducts((products, err)=>{
+  if(err){
+    document.getElementById('catTiles').innerHTML =
+      '<div class="empty-state">No se pudo cargar el catálogo en este momento. Verifica tu conexión o intenta más tarde.</div>';
+    return;
+  }
+
+  const cats = [...new Set(products.map(p=>p.category).filter(Boolean))];
+
+  // ===== Nav superior con menu desplegable de subcategorias =====
+  const nav = document.getElementById('navCats');
+  nav.innerHTML = cats.map(c=>{
+    const subs = [...new Set(products.filter(p=>p.category===c).map(p=>p.subcategory).filter(Boolean))];
+    const subLinks = subs.map(s=>
+      `<a href="category.html?cat=${encodeURIComponent(c)}&sub=${encodeURIComponent(s)}">${s}</a>`
+    ).join('');
+    return `<div class="nav-item">
+      <a href="category.html?cat=${encodeURIComponent(c)}" class="nav-cat-link">${c}</a>
+      ${subs.length ? `<div class="nav-dropdown"><div class="nav-dropdown-inner">${subLinks}</div></div>` : ''}
+    </div>`;
+  }).join('');
+
+  // ===== Cuadros grandes de categoria =====
+  const catTiles = document.getElementById('catTiles');
+  document.getElementById('catSub').textContent = `${products.length} productos en ${cats.length} categorías`;
+  catTiles.innerHTML = cats.map(c=>{
+    const items = products.filter(p=>p.category===c);
+    const rep = items.find(p=>p.id) || {};
+    return `<a href="category.html?cat=${encodeURIComponent(c)}" class="cat-tile">
+      <img src="${rep.id}.jpg" alt="${c}" loading="lazy" onerror="if(this.src!=='${rep.img||''}'&&'${rep.img||''}'){this.src='${rep.img}';}else{this.style.opacity=0;}">
+      <div class="cat-tile-overlay">
+        <h3>${c}</h3>
+        <span>${items.length} ítem${items.length===1?'':'s'}</span>
+      </div>
+    </a>`;
+  }).join('');
+
+  // ===== Filtro rapido de subcategorias =====
+  const allSubs = [...new Set(products.map(p=>p.subcategory).filter(Boolean))];
+  document.getElementById('subQuick').innerHTML = allSubs.length
+    ? allSubs.map(s=>`<a href="category.html?sub=${encodeURIComponent(s)}" class="subchip">${s}</a>`).join('')
+    : '';
+});
+</script>
+
+</body>
+</html>
