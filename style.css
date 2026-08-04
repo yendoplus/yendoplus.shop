@@ -144,7 +144,7 @@ nav.main button:hover, nav.main button.active{border-color:var(--red);color:var(
 }
 .prod-img img{width:100%;height:100%;object-fit:contain;cursor:zoom-in;}
 .stock-badge{
-  position:absolute;bottom:10px;right:10px;font-size:11px;font-weight:800;letter-spacing:.5px;
+  position:absolute;top:10px;right:10px;font-size:11px;font-weight:800;letter-spacing:.5px;
   text-transform:uppercase;padding:5px 10px;color:var(--white);
   border-radius:5px;border:1.5px solid rgba(255,255,255,.55);
   box-shadow:0 2px 6px rgba(0,0,0,.3);
@@ -467,9 +467,6 @@ footer.site{padding:60px 5vw 30px;background:var(--gray-line);}
   .prod-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:16px 12px;}
   .prod-name{font-size:13px;}
   .price{font-size:16px;}
-  .stock-badge{font-size:9px;padding:4px 7px;bottom:6px;right:6px;border-radius:4px;}
-  .price-old{font-size:12px;}
-  .discount-badge{font-size:9px;padding:2px 5px;}
 
   .cat-row{gap:14px;padding:16px 2px;}
   .cat-row .thumb{width:56px;height:56px;}
@@ -567,16 +564,3 @@ footer.site{padding:60px 5vw 30px;background:var(--gray-line);}
   .cat-page-layout{grid-template-columns:1fr;}
   .cat-sidebar{position:static;}
 }
-
-/* ===== PRECIO CON DESCUENTO ===== */
-.price-wrap{display:flex;align-items:center;flex-wrap:wrap;gap:6px;}
-.price-old{
-  font-family:'Work Sans';font-size:13px;font-weight:600;color:var(--gray);
-  text-decoration:line-through;
-}
-.discount-badge{
-  background:var(--red);color:#ffffff;font-size:11px;font-weight:800;
-  padding:3px 7px;border-radius:4px;letter-spacing:.3px;
-}
-.price-new{font-family:'Anton';font-size:20px;color:var(--ink);}
-.price-new .yn{color:var(--red);margin-right:2px;}
