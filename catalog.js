@@ -50,9 +50,47 @@ function isInStock(p){
   return getStockNum(p) > 0;
 }
 
+/* Busca cualquier columna del Excel que contenga la palabra "descuento" (sin importar el nombre exacto) */
+function getDiscountPercent(p){
+  for(const key in p){
+    if(key.toLowerCase().includes('descuento')){
+      const raw = (p[key] || '').replace('%','').trim();
+      const n = parseFloat(raw);
+      if(!isNaN(n) && n > 0) return n;
+    }
+  }
+  return 0;
+}
+
+function getFinalPrice(p){
+  const base = parseFloat(p.price) || 0;
+  const discount = getDiscountPercent(p);
+  return discount > 0 ? base * (1 - discount / 100) : base;
+}
+
+/* Convierte el nombre de una categoria en el nombre de archivo de imagen: "Hot Wheels" -> "hotwheels.jpg" */
+function categoryImageFile(catName){
+  const clean = (catName || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/\s+/g, '');
+  return `${clean}.jpg`;
+}
+
 function productCardHTML(p){
   const stockNum = getStockNum(p);
   const inStock = stockNum > 0;
+  const basePrice = parseFloat(p.price) || 0;
+  const discount = getDiscountPercent(p);
+  const finalPrice = getFinalPrice(p);
+
+  const priceHTML = discount > 0
+    ? `<div class="price-wrap">
+         <span class="price-old">S/${basePrice.toFixed(2)}</span>
+         <span class="discount-badge">-${discount}%</span>
+         <span class="price-new"><span class="yn">S/</span>${finalPrice.toFixed(2)}</span>
+       </div>`
+    : `<div class="price"><span class="yn">S/</span>${basePrice.toFixed(2)}</div>`;
+
   return `<div class="prod-card">
     <div class="prod-img ${inStock?'':'out-of-stock'}">
       <span class="stock-badge ${inStock?'in':'out'}">${inStock?'En stock':'Agotado'}</span>
@@ -62,7 +100,7 @@ function productCardHTML(p){
       <span class="prod-cat">${p.category||''}</span>
       <div class="prod-name">${p.name}</div>
       <div class="prod-footer">
-        <div class="price"><span class="yn">S/</span>${(parseFloat(p.price)||0).toFixed(2)}</div>
+        ${priceHTML}
         <a class="prod-link" href="${p.url}" target="_blank">Ver ficha →</a>
       </div>
       ${inStock
@@ -78,7 +116,7 @@ function attachProductGridHandlers(container, products){
     if(btn && !btn.disabled){
       const p = products.find(x => x.id === btn.dataset.id);
       if(p){
-        addToCart({ id:p.id, name:p.name, price:p.price, img:`${p.id}.jpg`, stock: getStockNum(p) });
+        addToCart({ id:p.id, name:p.name, price:getFinalPrice(p), img:`${p.id}.jpg`, stock: getStockNum(p) });
         const original = btn.textContent;
         btn.textContent = 'Agregado al carrito de compras';
         setTimeout(()=>{ btn.textContent = original; }, 1200);
