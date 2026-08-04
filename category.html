@@ -116,7 +116,7 @@ loadProducts((products, err)=>{
     ).join('');
     return `<div class="nav-item">
       <a href="category.html?cat=${encodeURIComponent(c)}" class="nav-cat-link${c===urlCat?' active':''}">${c}</a>
-      ${subs.length ? `<div class="nav-dropdown">${subLinks}</div>` : ''}
+      ${subs.length ? `<div class="nav-dropdown"><div class="nav-dropdown-inner">${subLinks}</div></div>` : ''}
     </div>`;
   }).join('');
 
@@ -159,7 +159,11 @@ loadProducts((products, err)=>{
 
     const term = document.getElementById('searchInput').value.trim().toLowerCase();
     if(term){
-      list = list.filter(p => p.name.toLowerCase().includes(term));
+      list = list.filter(p =>
+        p.name.toLowerCase().includes(term) ||
+        (p.category||'').toLowerCase().includes(term) ||
+        (p.subcategory||'').toLowerCase().includes(term)
+      );
     }
 
     const sortVal = document.getElementById('sortSelect').value;
