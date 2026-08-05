@@ -63,12 +63,16 @@
   <div class="cat-tiles" id="catTiles"></div>
 </section>
 
-<section class="section" id="seriesSection">
+<section class="section" id="serieSection">
   <div class="section-head">
-    <h2>Ver por serie</h2>
-    <span class="sub">Explora colecciones específicas dentro de cada categoría</span>
+    <h2>Serie</h2>
+    <span class="sub">Explora las colecciones de Figuras</span>
   </div>
-  <div class="cat-tiles cat-tiles-small" id="seriesTiles"></div>
+  <div class="carousel-wrap">
+    <button type="button" id="seriePrev" class="car-arrow car-arrow-left" aria-label="Anterior">‹</button>
+    <div class="carousel-track" id="serieTrack"></div>
+    <button type="button" id="serieNext" class="car-arrow car-arrow-right" aria-label="Siguiente">›</button>
+  </div>
 </section>
 
 <footer class="site">
@@ -217,31 +221,40 @@ fetch(CSV_URL)
 
     catTiles.innerHTML = todoTile + tiles;
 
-    /* ===== Cuadros pequeños: categorias que tienen subcategorias (series) ===== */
-    const seriesCats = cats.filter(c=>{
-      const items = products.filter(p=>getCategory(p)===c);
-      return items.some(p=>getCatLevel(p,2));
-    });
+    /* ===== Carrusel "Por serie": subcategorias (CATEGORIA2) de la categoria Figura ===== */
+    const figuraCat = cats.find(c => c.trim().toLowerCase().includes('figura'));
 
-    if(seriesCats.length > 0){
-      const seriesTiles = seriesCats.map(c=>{
-        const items = products.filter(p=>getCategory(p)===c);
-        const catSlug = c.trim().toLowerCase()
-          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-          .replace(/\s+/g, '');
-        const subCount = [...new Set(items.map(p=>getCatLevel(p,2)).filter(Boolean))].length;
-        return `<a href="category.html?cat=${encodeURIComponent(c)}" class="cat-tile cat-tile-small">
-          <img src="A/${catSlug}.jpg" alt="${c}" loading="lazy" onerror="imgFallback(this, '${catSlug}')">
-          <div class="cat-tile-overlay">
-            <h3>${c}</h3>
-            <span>${subCount} serie${subCount===1?'':'s'}</span>
-          </div>
-        </a>`;
-      }).join('');
+    if(figuraCat){
+      const figuraItems = products.filter(p=>getCategory(p)===figuraCat);
+      const series = [...new Set(figuraItems.map(p=>getCatLevel(p,2)).filter(Boolean))];
 
-      document.getElementById('seriesTiles').innerHTML = seriesTiles;
+      if(series.length > 0){
+        const track = document.getElementById('serieTrack');
+        track.innerHTML = series.map(s=>{
+          const count = figuraItems.filter(p=>getCatLevel(p,2)===s).length;
+          const slug = s.trim().toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/\s+/g, '');
+          return `<a href="category.html?cat=${encodeURIComponent(figuraCat)}&sub2=${encodeURIComponent(s)}" class="series-card">
+            <img src="A/${slug}.jpg" alt="${s}" loading="lazy" onerror="imgFallback(this, '${slug}')">
+            <div class="cat-tile-overlay">
+              <h3>${s}</h3>
+              <span>${count} ítem${count===1?'':'s'}</span>
+            </div>
+          </a>`;
+        }).join('');
+
+        document.getElementById('seriePrev').addEventListener('click', ()=>{
+          track.scrollBy({left: -track.clientWidth, behavior:'smooth'});
+        });
+        document.getElementById('serieNext').addEventListener('click', ()=>{
+          track.scrollBy({left: track.clientWidth, behavior:'smooth'});
+        });
+      } else {
+        document.getElementById('serieSection').style.display = 'none';
+      }
     } else {
-      document.getElementById('seriesSection').style.display = 'none';
+      document.getElementById('serieSection').style.display = 'none';
     }
   })
   .catch(()=>{
