@@ -89,6 +89,42 @@ function imgFallback(el, name, fallback){
     el.style.opacity = 0;
   }
 }
+
+/* Igual que arriba, pero busca DENTRO de una carpeta con el nombre de la categoria: A/FIGURAS/nombre.ext */
+function folderCases(folder){
+  const trimmed = (folder || '').trim();
+  return [...new Set([trimmed, trimmed.toLowerCase(), trimmed.toUpperCase()])];
+}
+function imgCandidatesIn(folder, name){
+  const trimmed = (name || '').trim();
+  const slug = trimmed.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '');
+  const cases = [...new Set([trimmed, trimmed.toLowerCase(), trimmed.toUpperCase(), slug])];
+  const exts = [...IMG_EXTS, ...IMG_EXTS.map(e => e.toUpperCase())];
+  const list = [];
+  folderCases(folder).forEach(f=>{
+    cases.forEach(c => exts.forEach(ext => list.push(`A/${encodeURIComponent(f)}/${encodeURIComponent(c)}.${ext}`)));
+  });
+  return list;
+}
+function imgFirstSrcIn(folder, name){
+  return imgCandidatesIn(folder, name)[0];
+}
+function imgFallbackIn(el, folder, name, fallback){
+  if(!el.dataset.candidatesIn){
+    el.dataset.candidatesIn = JSON.stringify(imgCandidatesIn(folder, name));
+    el.dataset.tryIdxIn = '0';
+  }
+  const candidates = JSON.parse(el.dataset.candidatesIn);
+  const idx = parseInt(el.dataset.tryIdxIn) + 1;
+  if(idx < candidates.length){
+    el.dataset.tryIdxIn = idx;
+    el.src = candidates[idx];
+  } else if(fallback && el.src !== fallback){
+    el.src = fallback;
+  } else {
+    el.style.opacity = 0;
+  }
+}
 let selectedDelivery = null;
 let selectedPayment = null;
 
@@ -139,7 +175,7 @@ function renderCart(){
 
   const rows = cart.map(i => `
     <div class="cart-row" data-id="${i.id}">
-      <img src="${i.img}" alt="${i.name}" onerror="imgFallback(this,'${i.id}','${i.fallbackImg}')">
+      <img src="${i.img}" alt="${i.name}" onerror="imgFallbackIn(this,'${i.folder}','${i.id}','${i.fallbackImg}')">
       <div class="ci-info">
         <div class="ci-name">${i.name}</div>
         <div class="ci-price">${fmtPrice(i.price)} c/u</div>

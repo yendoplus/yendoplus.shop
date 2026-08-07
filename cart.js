@@ -25,7 +25,7 @@ function addToCart(item){
     existing.qty = Math.min(existing.qty + 1, maxStock);
     if(item.stock) existing.stock = item.stock;
   } else {
-    cart.push({ id:item.id, name:item.name, price:item.price, img:item.img, fallbackImg:item.fallbackImg||'', stock:item.stock || 0, qty:1 });
+    cart.push({ id:item.id, name:item.name, price:item.price, img:item.img, folder:item.folder||'', fallbackImg:item.fallbackImg||'', stock:item.stock || 0, qty:1 });
   }
   saveCart(cart);
 }
@@ -84,7 +84,7 @@ function renderMiniCart(){
 
   itemsEl.innerHTML = cart.map(i => `
     <div class="mini-cart-row">
-      <img src="${i.img}" alt="${i.name}" onerror="if(typeof imgFallback==='function'){imgFallback(this,'${i.id}','${i.fallbackImg}');}else{this.style.opacity=0;}">
+      <img src="${i.img}" alt="${i.name}" onerror="if(typeof imgFallbackIn==='function'){imgFallbackIn(this,'${i.folder}','${i.id}','${i.fallbackImg}');}else{this.style.opacity=0;}">
       <div class="mc-info">
         <div class="mc-name">${i.name}</div>
         <div class="mc-price">${fmtPrice(i.price)}</div>

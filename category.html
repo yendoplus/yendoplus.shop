@@ -159,6 +159,42 @@ function imgFallback(el, name, fallback){
   }
 }
 
+/* Igual que arriba, pero busca DENTRO de una carpeta con el nombre de la categoria: A/FIGURAS/nombre.ext */
+function folderCases(folder){
+  const trimmed = (folder || '').trim();
+  return [...new Set([trimmed, trimmed.toLowerCase(), trimmed.toUpperCase()])];
+}
+function imgCandidatesIn(folder, name){
+  const trimmed = (name || '').trim();
+  const slug = trimmed.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '');
+  const cases = [...new Set([trimmed, trimmed.toLowerCase(), trimmed.toUpperCase(), slug])];
+  const exts = [...IMG_EXTS, ...IMG_EXTS.map(e => e.toUpperCase())];
+  const list = [];
+  folderCases(folder).forEach(f=>{
+    cases.forEach(c => exts.forEach(ext => list.push(`A/${encodeURIComponent(f)}/${encodeURIComponent(c)}.${ext}`)));
+  });
+  return list;
+}
+function imgFirstSrcIn(folder, name){
+  return imgCandidatesIn(folder, name)[0];
+}
+function imgFallbackIn(el, folder, name, fallback){
+  if(!el.dataset.candidatesIn){
+    el.dataset.candidatesIn = JSON.stringify(imgCandidatesIn(folder, name));
+    el.dataset.tryIdxIn = '0';
+  }
+  const candidates = JSON.parse(el.dataset.candidatesIn);
+  const idx = parseInt(el.dataset.tryIdxIn) + 1;
+  if(idx < candidates.length){
+    el.dataset.tryIdxIn = idx;
+    el.src = candidates[idx];
+  } else if(fallback && el.src !== fallback){
+    el.src = fallback;
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 function getStockNum(p){
   const n = parseInt(p.stock);
   return isNaN(n) ? 0 : n;
@@ -221,7 +257,7 @@ function productCardHTML(p){
   return `<div class="prod-card">
     <div class="prod-img ${inStock?'':'out-of-stock'}">
       <span class="stock-badge ${inStock?'in':'out'}">${inStock?'En stock':'Agotado'}</span>
-      <img src="${imgFirstSrc(p.id)}" alt="${p.name}" loading="lazy" class="zoomable" onerror="imgFallback(this, '${p.id}', '${p.img}')">
+      <img src="${imgFirstSrcIn(getCatLevel(p,1), p.id)}" alt="${p.name}" loading="lazy" class="zoomable" onerror="imgFallbackIn(this, '${getCatLevel(p,1).replace(/'/g, "\\'")}', '${p.id}', '${p.img}')">
     </div>
     <div class="prod-body">
       <span class="prod-cat">${allCats}</span>
@@ -400,7 +436,7 @@ function render(){
     btn.addEventListener('click', function(){
       const p = allProducts.find(x => x.id === btn.dataset.id);
       if(!p) return;
-      addToCart({ id:p.id, name:p.name, price:getFinalPrice(p), img:`A/${p.id}.jpg`, fallbackImg:p.img, stock: getStockNum(p) });
+      addToCart({ id:p.id, name:p.name, price:getFinalPrice(p), img:imgFirstSrcIn(getCatLevel(p,1), p.id), folder:getCatLevel(p,1), fallbackImg:p.img, stock: getStockNum(p) });
       render();
     });
   });

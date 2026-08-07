@@ -54,7 +54,7 @@
     <a class="hero-cta" href="#categorias">Ver categorías ↓</a>
   </div>
   <div class="hero-media">
-    <img id="heroSlide" src="A/avionwaifu.jpg" alt="Yendo Plus" onerror="imgFallback(this, 'avionwaifu')">
+    <img id="heroSlide" src="A/foto4seg0.jpg" alt="Yendo Plus">
   </div>
 </section>
 
@@ -178,6 +178,42 @@ function imgFallback(el, name, fallback){
   }
 }
 
+/* Igual que arriba, pero busca DENTRO de una carpeta con el nombre de la categoria: A/FIGURAS/nombre.ext */
+function folderCases(folder){
+  const trimmed = (folder || '').trim();
+  return [...new Set([trimmed, trimmed.toLowerCase(), trimmed.toUpperCase()])];
+}
+function imgCandidatesIn(folder, name){
+  const trimmed = (name || '').trim();
+  const slug = trimmed.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '');
+  const cases = [...new Set([trimmed, trimmed.toLowerCase(), trimmed.toUpperCase(), slug])];
+  const exts = [...IMG_EXTS, ...IMG_EXTS.map(e => e.toUpperCase())];
+  const list = [];
+  folderCases(folder).forEach(f=>{
+    cases.forEach(c => exts.forEach(ext => list.push(`A/${encodeURIComponent(f)}/${encodeURIComponent(c)}.${ext}`)));
+  });
+  return list;
+}
+function imgFirstSrcIn(folder, name){
+  return imgCandidatesIn(folder, name)[0];
+}
+function imgFallbackIn(el, folder, name, fallback){
+  if(!el.dataset.candidatesIn){
+    el.dataset.candidatesIn = JSON.stringify(imgCandidatesIn(folder, name));
+    el.dataset.tryIdxIn = '0';
+  }
+  const candidates = JSON.parse(el.dataset.candidatesIn);
+  const idx = parseInt(el.dataset.tryIdxIn) + 1;
+  if(idx < candidates.length){
+    el.dataset.tryIdxIn = idx;
+    el.src = candidates[idx];
+  } else if(fallback && el.src !== fallback){
+    el.src = fallback;
+  } else {
+    el.style.opacity = 0;
+  }
+}
+
 function buildLevel(items, level, urlParams){
   const values=[...new Set(items.map(p=>getCatLevel(p, level)).filter(Boolean))];
   if(values.length === 0) return '';
@@ -224,7 +260,7 @@ fetch(CSV_URL)
       const items=products.filter(p=>getCategory(p)===c);
       const cSafe = c.replace(/'/g, "\\'");
       return `<a href="category.html?cat=${encodeURIComponent(c)}" class="cat-tile">
-        <img src="${imgFirstSrc(c)}" alt="${c}" loading="lazy" onerror="imgFallback(this, '${cSafe}')">
+        <img src="${imgFirstSrcIn(c, c)}" alt="${c}" loading="lazy" onerror="imgFallbackIn(this, '${cSafe}', '${cSafe}')">
         <div class="cat-tile-overlay">
           <h3>${c}</h3>
           <span>${items.length} ítem${items.length===1?'':'s'}</span>
@@ -255,8 +291,9 @@ fetch(CSV_URL)
         track.innerHTML = series.map(s=>{
           const count = figuraItems.filter(p=>getCatLevel(p,2)===s).length;
           const sSafe = s.replace(/'/g, "\\'");
+          const figuraCatSafe = figuraCat.replace(/'/g, "\\'");
           return `<a href="category.html?cat=${encodeURIComponent(figuraCat)}&sub2=${encodeURIComponent(s)}" class="cat-tile cat-tile-small">
-            <img src="${imgFirstSrc(s)}" alt="${s}" loading="lazy" onerror="imgFallback(this, '${sSafe}')">
+            <img src="${imgFirstSrcIn(figuraCat, s)}" alt="${s}" loading="lazy" onerror="imgFallbackIn(this, '${figuraCatSafe}', '${sSafe}')">
             <div class="cat-tile-overlay">
               <h3>${s}</h3>
               <span>${count} ítem${count===1?'':'s'}</span>
@@ -277,21 +314,30 @@ fetch(CSV_URL)
 
 /* ===== SLIDESHOW DEL HERO (cambia de foto cada 4 segundos) ===== */
 /* Agrega o quita nombres aqui para cambiar que fotos rotan (deben estar en la carpeta A/) */
-const heroImages = ['avionwaifu', 'foto4seg1', 'foto4seg2', 'foto4seg3'];
+const heroImages = ['foto4seg0', 'foto4seg1', 'foto4seg2', 'foto4seg3'];
+const heroImg = document.getElementById('heroSlide');
 
-if(heroImages.length > 1){
-  const heroImg = document.getElementById('heroSlide');
-  let heroIdx = 0;
-  setInterval(()=>{
-    heroIdx = (heroIdx + 1) % heroImages.length;
-    heroImg.style.opacity = 0;
-    setTimeout(()=>{
-      delete heroImg.dataset.candidates;
-      delete heroImg.dataset.tryIdx;
-      heroImg.src = imgFirstSrc(heroImages[heroIdx]);
-      heroImg.style.opacity = 1;
-    }, 300);
-  }, 4000);
+function setHeroSlide(name){
+  delete heroImg.dataset.candidates;
+  delete heroImg.dataset.tryIdx;
+  heroImg.onerror = function(){ imgFallback(heroImg, name); };
+  heroImg.src = imgFirstSrc(name);
+}
+
+if(heroImg){
+  setHeroSlide(heroImages[0]);
+
+  if(heroImages.length > 1){
+    let heroIdx = 0;
+    setInterval(()=>{
+      heroIdx = (heroIdx + 1) % heroImages.length;
+      heroImg.style.opacity = 0;
+      setTimeout(()=>{
+        setHeroSlide(heroImages[heroIdx]);
+        heroImg.style.opacity = 1;
+      }, 300);
+    }, 4000);
+  }
 }
 
 /* ===== BOTON SUBIR ARRIBA ===== */
