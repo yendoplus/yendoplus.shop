@@ -212,6 +212,33 @@ function imgFallbackIn(el, folder, name, fallback){
   }
 }
 
+/* Para cuadros de categoria/serie: prueba 1) dentro de la carpeta con el mismo nombre,
+   2) en la raiz de A/, y 3) como ultimo recurso, la foto de un producto representativo */
+function buildTileCandidates(folder, name, repId){
+  const list = [...imgCandidatesIn(folder, name), ...imgCandidates(name)];
+  if(repId) list.push(...imgCandidatesIn(folder, repId));
+  return list;
+}
+function tileImgAttrs(folder, name, repId){
+  const cands = buildTileCandidates(folder, name, repId);
+  const data = JSON.stringify(cands).replace(/"/g, '&quot;');
+  return `src="${cands[0]}" data-cands="${data}" onerror="imgFallbackList(this)"`;
+}
+function imgFallbackList(el){
+  if(!el.dataset.idx){
+    el.dataset.cands = el.getAttribute('data-cands');
+    el.dataset.idx = '0';
+  }
+  const cands = JSON.parse(el.dataset.cands);
+  const idx = parseInt(el.dataset.idx) + 1;
+  if(idx < cands.length){
+    el.dataset.idx = idx;
+    el.src = cands[idx];
+  } else {
+    el.style.opacity = 0;
+  }
+}
+
 function buildLevel(items, level, urlParams){
   const values=[...new Set(items.map(p=>getCatLevel(p, level)).filter(Boolean))];
   if(values.length === 0) return '';
@@ -256,9 +283,9 @@ fetch(CSV_URL)
 
     const tiles = catsSorted.map(c=>{
       const items=products.filter(p=>getCategory(p)===c);
-      const cSafe = c.replace(/'/g, "\\'");
+      const repItem = items.find(p=>p.id);
       return `<a href="category.html?cat=${encodeURIComponent(c)}" class="cat-tile">
-        <img src="${imgFirstSrcIn(c, c)}" alt="${c}" loading="lazy" onerror="imgFallbackIn(this, '${cSafe}', '${cSafe}')">
+        <img ${tileImgAttrs(c, c, repItem ? repItem.id : null)} alt="${c}" loading="lazy">
         <div class="cat-tile-overlay">
           <h3>${c}</h3>
           <span>${items.length} ítem${items.length===1?'':'s'}</span>
@@ -287,11 +314,11 @@ fetch(CSV_URL)
       if(series.length > 0){
         const track = document.getElementById('serieTrack');
         track.innerHTML = series.map(s=>{
-          const count = figuraItems.filter(p=>getCatLevel(p,2)===s).length;
-          const sSafe = s.replace(/'/g, "\\'");
-          const figuraCatSafe = figuraCat.replace(/'/g, "\\'");
+          const seriesItems = figuraItems.filter(p=>getCatLevel(p,2)===s);
+          const count = seriesItems.length;
+          const repItem = seriesItems.find(p=>p.id);
           return `<a href="category.html?cat=${encodeURIComponent(figuraCat)}&sub2=${encodeURIComponent(s)}" class="cat-tile cat-tile-small">
-            <img src="${imgFirstSrcIn(figuraCat, s)}" alt="${s}" loading="lazy" onerror="imgFallbackIn(this, '${figuraCatSafe}', '${sSafe}')">
+            <img ${tileImgAttrs(figuraCat, s, repItem ? repItem.id : null)} alt="${s}" loading="lazy">
             <div class="cat-tile-overlay">
               <h3>${s}</h3>
               <span>${count} ítem${count===1?'':'s'}</span>
