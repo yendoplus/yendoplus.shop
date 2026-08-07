@@ -672,3 +672,13 @@ nav.main a.active-link{border-color:var(--red);color:var(--red-dark);}
 .cat-tile-small .cat-tile-overlay{padding:14px;}
 .cat-tile-small .cat-tile-overlay h3{font-size:clamp(15px,1.8vw,19px);}
 .cat-tile-small .cat-tile-overlay span{font-size:11px;}
+
+/* ===== BOTON CARGAR MAS PRODUCTOS ===== */
+.load-more-btn{
+  display:block;margin:32px auto 0;padding:14px 32px;
+  background:var(--ink);color:var(--white);border:none;
+  font-family:'Work Sans';font-weight:700;font-size:14px;
+  text-transform:uppercase;letter-spacing:.5px;cursor:pointer;
+  transition:background .15s;
+}
+.load-more-btn:hover{background:var(--red-dark);}

@@ -127,16 +127,15 @@ function getCatLevel(p, level){
   return (p['CATEGORIA'+level] || '').trim();
 }
 
-/* Prueba varios formatos de imagen (jpg, png, jpeg, webp) antes de usar el respaldo del Excel */
-const IMG_EXTS = ['jpg','png','jpeg','webp'];
-/* Genera todas las combinaciones a probar: nombre tal cual / en minusculas / en mayusculas, x cada extension */
+/* Prueba pocos formatos comunes para no frenar la carga (jpg, png) */
+const IMG_EXTS = ['jpg','png'];
+/* Genera pocas combinaciones a probar: nombre tal cual y version simplificada (sin espacios/tildes), x cada extension */
 function imgCandidates(name){
   const trimmed = (name || '').trim();
   const slug = trimmed.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '');
-  const cases = [...new Set([trimmed, trimmed.toLowerCase(), trimmed.toUpperCase(), slug])];
-  const exts = [...IMG_EXTS, ...IMG_EXTS.map(e => e.toUpperCase())];
+  const cases = [...new Set([trimmed, slug])];
   const list = [];
-  cases.forEach(c => exts.forEach(ext => list.push(`A/${encodeURIComponent(c)}.${ext}`)));
+  cases.forEach(c => IMG_EXTS.forEach(ext => list.push(`A/${encodeURIComponent(c)}.${ext}`)));
   return list;
 }
 function imgFirstSrc(name){
@@ -162,16 +161,15 @@ function imgFallback(el, name, fallback){
 /* Igual que arriba, pero busca DENTRO de una carpeta con el nombre de la categoria: A/FIGURAS/nombre.ext */
 function folderCases(folder){
   const trimmed = (folder || '').trim();
-  return [...new Set([trimmed, trimmed.toLowerCase(), trimmed.toUpperCase()])];
+  return [...new Set([trimmed, trimmed.toLowerCase()])];
 }
 function imgCandidatesIn(folder, name){
   const trimmed = (name || '').trim();
   const slug = trimmed.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '');
-  const cases = [...new Set([trimmed, trimmed.toLowerCase(), trimmed.toUpperCase(), slug])];
-  const exts = [...IMG_EXTS, ...IMG_EXTS.map(e => e.toUpperCase())];
+  const cases = [...new Set([trimmed, slug])];
   const list = [];
   folderCases(folder).forEach(f=>{
-    cases.forEach(c => exts.forEach(ext => list.push(`A/${encodeURIComponent(f)}/${encodeURIComponent(c)}.${ext}`)));
+    cases.forEach(c => IMG_EXTS.forEach(ext => list.push(`A/${encodeURIComponent(f)}/${encodeURIComponent(c)}.${ext}`)));
   });
   return list;
 }
@@ -394,6 +392,10 @@ function buildNav(){
   nav.innerHTML = `<div class="nav-item"><a href="category.html"${todoActive}>Todo</a></div>` + buildLevel(allProducts, 1, {});
 }
 
+const PAGE_SIZE = 24;
+let currentList = [];
+let visibleCount = PAGE_SIZE;
+
 function render(){
   let list = allProducts.filter(p => matchesSelection(p, selectedLevels.length));
 
@@ -424,12 +426,25 @@ function render(){
 
   document.getElementById('catCount').textContent = `${list.length} producto${list.length===1?'':'s'}`;
 
+  currentList = list;
+  visibleCount = PAGE_SIZE;
+  renderProducts();
+}
+
+function renderProducts(){
   const container = document.getElementById('catProducts');
-  if(list.length === 0){
+  if(currentList.length === 0){
     container.innerHTML = '<div class="empty-state">No se encontraron productos con estos filtros.</div>';
     return;
   }
-  container.innerHTML = `<div class="prod-grid">${list.map(productCardHTML).join('')}</div>`;
+
+  const slice = currentList.slice(0, visibleCount);
+  const remaining = currentList.length - visibleCount;
+  const moreBtn = remaining > 0
+    ? `<button type="button" id="loadMoreBtn" class="load-more-btn">Cargar más productos (${remaining} restantes)</button>`
+    : '';
+
+  container.innerHTML = `<div class="prod-grid">${slice.map(productCardHTML).join('')}</div>${moreBtn}`;
 
   container.querySelectorAll('.add-cart-btn').forEach(btn=>{
     if(btn.disabled) return;
@@ -437,13 +452,21 @@ function render(){
       const p = allProducts.find(x => x.id === btn.dataset.id);
       if(!p) return;
       addToCart({ id:p.id, name:p.name, price:getFinalPrice(p), img:imgFirstSrcIn(getCatLevel(p,1), p.id), folder:getCatLevel(p,1), fallbackImg:p.img, stock: getStockNum(p) });
-      render();
+      renderProducts();
     });
   });
 
   container.querySelectorAll('.zoomable').forEach(img=>{
     img.addEventListener('click', ()=> openImgModal(img.src, img.alt));
   });
+
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  if(loadMoreBtn){
+    loadMoreBtn.addEventListener('click', ()=>{
+      visibleCount += PAGE_SIZE;
+      renderProducts();
+    });
+  }
 }
 
 function openImgModal(src, alt){

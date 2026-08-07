@@ -58,16 +58,15 @@
 <script>
 const WHATSAPP_NUMBER = "51915276379";
 
-/* Prueba varios formatos de imagen (jpg, png, jpeg, webp) */
-const IMG_EXTS = ['jpg','png','jpeg','webp'];
-/* Genera todas las combinaciones a probar: nombre tal cual / en minusculas / en mayusculas, x cada extension */
+/* Prueba pocos formatos comunes para no frenar la carga (jpg, png) */
+const IMG_EXTS = ['jpg','png'];
+/* Genera pocas combinaciones a probar: nombre tal cual y version simplificada (sin espacios/tildes), x cada extension */
 function imgCandidates(name){
   const trimmed = (name || '').trim();
   const slug = trimmed.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '');
-  const cases = [...new Set([trimmed, trimmed.toLowerCase(), trimmed.toUpperCase(), slug])];
-  const exts = [...IMG_EXTS, ...IMG_EXTS.map(e => e.toUpperCase())];
+  const cases = [...new Set([trimmed, slug])];
   const list = [];
-  cases.forEach(c => exts.forEach(ext => list.push(`A/${encodeURIComponent(c)}.${ext}`)));
+  cases.forEach(c => IMG_EXTS.forEach(ext => list.push(`A/${encodeURIComponent(c)}.${ext}`)));
   return list;
 }
 function imgFirstSrc(name){
@@ -93,16 +92,15 @@ function imgFallback(el, name, fallback){
 /* Igual que arriba, pero busca DENTRO de una carpeta con el nombre de la categoria: A/FIGURAS/nombre.ext */
 function folderCases(folder){
   const trimmed = (folder || '').trim();
-  return [...new Set([trimmed, trimmed.toLowerCase(), trimmed.toUpperCase()])];
+  return [...new Set([trimmed, trimmed.toLowerCase()])];
 }
 function imgCandidatesIn(folder, name){
   const trimmed = (name || '').trim();
   const slug = trimmed.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, '');
-  const cases = [...new Set([trimmed, trimmed.toLowerCase(), trimmed.toUpperCase(), slug])];
-  const exts = [...IMG_EXTS, ...IMG_EXTS.map(e => e.toUpperCase())];
+  const cases = [...new Set([trimmed, slug])];
   const list = [];
   folderCases(folder).forEach(f=>{
-    cases.forEach(c => exts.forEach(ext => list.push(`A/${encodeURIComponent(f)}/${encodeURIComponent(c)}.${ext}`)));
+    cases.forEach(c => IMG_EXTS.forEach(ext => list.push(`A/${encodeURIComponent(f)}/${encodeURIComponent(c)}.${ext}`)));
   });
   return list;
 }
