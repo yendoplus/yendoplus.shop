@@ -198,6 +198,22 @@ function imgFallbackIn(el, folder, name, fallback){
   }
 }
 
+/* Para imagenes con lista de candidatos ya armada (varias rutas posibles a probar en orden) */
+function imgFallbackList(el){
+  if(!el.dataset.idx){
+    el.dataset.cands = el.getAttribute('data-cands');
+    el.dataset.idx = '0';
+  }
+  const cands = JSON.parse(el.dataset.cands);
+  const idx = parseInt(el.dataset.idx) + 1;
+  if(idx < cands.length){
+    el.dataset.idx = idx;
+    el.src = cands[idx];
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 function getStockNum(p){
   const n = parseInt(p.stock);
   return isNaN(n) ? 0 : n;
@@ -223,6 +239,15 @@ function getFinalPrice(p){
 function qtyInCart(id){
   const item = getCart().find(i => i.id === id);
   return item ? item.qty : 0;
+}
+
+function productImgCandidates(p){
+  const cat1 = getCatLevel(p,1);
+  const cat2 = getCatLevel(p,2);
+  const list = [...imgCandidatesIn(cat1, p.id)];
+  if(cat2) list.push(...imgCandidatesIn(`${cat1}/${cat2}`, p.id));
+  if(p.img) list.push(p.img);
+  return list;
 }
 
 function productCardHTML(p){
@@ -257,10 +282,15 @@ function productCardHTML(p){
   const allCats = [1,2,3,4].map(l=>getCatLevel(p,l)).filter(Boolean).join(' / ');
   const fichaHTML = p.url ? `<a class="prod-link" href="${p.url}" target="_blank">Ver ficha →</a>` : '';
 
+  const cat1 = getCatLevel(p,1);
+  const cat2 = getCatLevel(p,2);
+  const prodCands = productImgCandidates(p);
+  const prodData = JSON.stringify(prodCands).replace(/"/g, '&quot;');
+
   return `<div class="prod-card">
     <div class="prod-img ${inStock?'':'out-of-stock'}">
       <span class="stock-badge ${inStock?'in':'out'}">${inStock?'En stock':'Agotado'}</span>
-      <img src="${imgFirstSrcIn(getCatLevel(p,1), p.id)}" alt="${p.name}" loading="lazy" class="zoomable" onerror="imgFallbackIn(this, '${getCatLevel(p,1).replace(/'/g, "\\'")}', '${p.id}', '${p.img}')">
+      <img src="${prodCands[0]}" data-cands="${prodData}" alt="${p.name}" loading="lazy" class="zoomable" onerror="imgFallbackList(this)">
     </div>
     <div class="prod-body">
       <span class="prod-cat">${allCats}</span>
@@ -456,7 +486,8 @@ function renderProducts(){
     btn.addEventListener('click', function(){
       const p = allProducts.find(x => x.id === btn.dataset.id);
       if(!p) return;
-      addToCart({ id:p.id, name:p.name, price:getFinalPrice(p), img:imgFirstSrcIn(getCatLevel(p,1), p.id), folder:getCatLevel(p,1), fallbackImg:p.img, stock: getStockNum(p) });
+      const cands = productImgCandidates(p);
+      addToCart({ id:p.id, name:p.name, price:getFinalPrice(p), img:cands[0], cands:cands, folder:getCatLevel(p,1), fallbackImg:p.img, stock: getStockNum(p) });
       if(typeof openMiniCart === 'function') openMiniCart(3000);
       renderProducts();
     });

@@ -178,7 +178,7 @@ function renderCart(){
 
   const rows = cart.map(i => `
     <div class="cart-row" data-id="${i.id}">
-      <img src="${i.img}" alt="${i.name}" onerror="imgFallbackIn(this,'${i.folder}','${i.id}','${i.fallbackImg}')">
+      <img src="${i.img}" alt="${i.name}" data-cands='${i.cands ? JSON.stringify(i.cands).replace(/'/g,"&#39;") : ''}' onerror="miniCartImgError(this,'${i.folder}','${i.id}','${i.fallbackImg}')">
       <div class="ci-info">
         <div class="ci-name">${i.name}</div>
         <div class="ci-price">${fmtPrice(i.price)} c/u</div>

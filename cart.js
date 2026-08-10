@@ -1,5 +1,27 @@
 const CART_KEY = 'yendo_cart_v2';
 
+function miniCartImgError(el, folder, id, fallback){
+  const raw = el.getAttribute('data-cands');
+  if(raw){
+    if(!el.dataset.idx){
+      el.dataset.cands = raw;
+      el.dataset.idx = '0';
+    }
+    const cands = JSON.parse(el.dataset.cands);
+    const idx = parseInt(el.dataset.idx) + 1;
+    if(idx < cands.length){
+      el.dataset.idx = idx;
+      el.src = cands[idx];
+      return;
+    }
+  }
+  if(typeof imgFallbackIn === 'function'){
+    imgFallbackIn(el, folder, id, fallback);
+  } else {
+    el.style.opacity = 0;
+  }
+}
+
 function fmtPrice(n){
   const num = parseFloat(n);
   if(isNaN(num)) return 'S/0.00';
@@ -25,7 +47,7 @@ function addToCart(item){
     existing.qty = Math.min(existing.qty + 1, maxStock);
     if(item.stock) existing.stock = item.stock;
   } else {
-    cart.push({ id:item.id, name:item.name, price:item.price, img:item.img, folder:item.folder||'', fallbackImg:item.fallbackImg||'', stock:item.stock || 0, qty:1 });
+    cart.push({ id:item.id, name:item.name, price:item.price, img:item.img, cands:item.cands||null, folder:item.folder||'', fallbackImg:item.fallbackImg||'', stock:item.stock || 0, qty:1 });
   }
   saveCart(cart);
 }
@@ -84,7 +106,7 @@ function renderMiniCart(){
 
   itemsEl.innerHTML = cart.map(i => `
     <div class="mini-cart-row">
-      <img src="${i.img}" alt="${i.name}" onerror="if(typeof imgFallbackIn==='function'){imgFallbackIn(this,'${i.folder}','${i.id}','${i.fallbackImg}');}else{this.style.opacity=0;}">
+      <img src="${i.img}" alt="${i.name}" data-cands='${i.cands ? JSON.stringify(i.cands).replace(/'/g,"&#39;") : ''}' onerror="miniCartImgError(this,'${i.folder}','${i.id}','${i.fallbackImg}')">
       <div class="mc-info">
         <div class="mc-name">${i.name}</div>
         <div class="mc-price">${fmtPrice(i.price)}</div>
