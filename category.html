@@ -246,8 +246,19 @@ function qtyInCart(id){
   return item ? item.qty : 0;
 }
 
+/* Si el texto de CATEGORIA1 en el Excel no coincide con el nombre real de la carpeta en GitHub,
+   agrega aqui el alias correcto (izquierda = como esta en el Excel, derecha = nombre real de la carpeta) */
+const FOLDER_ALIASES = {
+  'FIGURA': 'FIGURAS',
+  'PALOMERA': 'PALOMERAS'
+};
+function resolveFolder(name){
+  const n = (name || '').trim();
+  return FOLDER_ALIASES[n] || n;
+}
+
 function productImgCandidates(p){
-  const cat1 = getCatLevel(p,1);
+  const cat1 = resolveFolder(getCatLevel(p,1));
   const list = [...imgCandidatesIn(cat1, p.ID)];
   if(p.img) list.push(p.img);
   return list;
