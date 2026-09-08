@@ -266,7 +266,7 @@ fetch(CSV_URL)
   .then(r=>r.text())
   .then(text=>{
     const rows=parseCSV(text);
-    const products=toObjects(rows).filter(p=>p.name);
+    const products=toObjects(rows).filter(p=>p.PRODUCTO);
     const cats=[...new Set(products.map(getCategory).filter(Boolean))];
 
     const nav=document.getElementById('navCats');
@@ -283,9 +283,9 @@ fetch(CSV_URL)
 
     const tiles = catsSorted.map(c=>{
       const items=products.filter(p=>getCategory(p)===c);
-      const repItem = items.find(p=>p.id);
+      const repItem = items.find(p=>p.ID);
       return `<a href="category.html?cat=${encodeURIComponent(c)}" class="cat-tile">
-        <img ${tileImgAttrs('CATEGORIA', c, c, repItem ? repItem.id : null)} alt="${c}" loading="lazy">
+        <img ${tileImgAttrs('CATEGORIA', c, c, repItem ? repItem.ID : null)} alt="${c}" loading="lazy">
         <div class="cat-tile-overlay">
           <h3>${c}</h3>
           <span>${items.length} ítem${items.length===1?'':'s'}</span>
@@ -316,9 +316,9 @@ fetch(CSV_URL)
         track.innerHTML = series.map(s=>{
           const seriesItems = figuraItems.filter(p=>getCatLevel(p,2)===s);
           const count = seriesItems.length;
-          const repItem = seriesItems.find(p=>p.id);
+          const repItem = seriesItems.find(p=>p.ID);
           return `<a href="category.html?cat=${encodeURIComponent(figuraCat)}&sub2=${encodeURIComponent(s)}" class="cat-tile cat-tile-small">
-            <img ${tileImgAttrs('CATEGORIA/SERIES', s, figuraCat, repItem ? repItem.id : null)} alt="${s}" loading="lazy">
+            <img ${tileImgAttrs('CATEGORIA/SERIES', s, figuraCat, repItem ? repItem.ID : null)} alt="${s}" loading="lazy">
             <div class="cat-tile-overlay">
               <h3>${s}</h3>
               <span>${count} ítem${count===1?'':'s'}</span>

@@ -248,7 +248,7 @@ function qtyInCart(id){
 
 function productImgCandidates(p){
   const cat1 = getCatLevel(p,1);
-  const list = [...imgCandidatesIn(cat1, p.id)];
+  const list = [...imgCandidatesIn(cat1, p.ID)];
   if(p.img) list.push(p.img);
   return list;
 }
@@ -256,7 +256,7 @@ function productImgCandidates(p){
 function productCardHTML(p){
   const stockNum = getStockNum(p);
   const inStock = stockNum > 0;
-  const inCart = qtyInCart(p.id);
+  const inCart = qtyInCart(p.ID);
   const canAddMore = inStock && inCart < stockNum;
 
   const basePrice = parseFloat(p.price) || 0;
@@ -279,7 +279,7 @@ function productCardHTML(p){
   } else if(!canAddMore){
     btnHTML = `<button type="button" class="add-cart-btn" disabled>Stock máximo en carrito</button>`;
   } else {
-    btnHTML = `<button type="button" class="add-cart-btn" data-id="${p.id}">Agregar al carro</button>`;
+    btnHTML = `<button type="button" class="add-cart-btn" data-id="${p.ID}">Agregar al carro</button>`;
   }
 
   const allCats = [1,2,3,4].map(l=>getCatLevel(p,l)).filter(Boolean).join(' / ');
@@ -291,12 +291,12 @@ function productCardHTML(p){
   return `<div class="prod-card">
     <div class="prod-img ${inStock?'':'out-of-stock'}">
       <span class="stock-badge ${inStock?'in':'out'}">${inStock?'En stock':'Agotado'}</span>
-      <span class="prod-id-badge">${p.id}</span>
-      <img src="${prodCands[0]}" data-cands="${prodData}" alt="${p.name}" loading="lazy" class="zoomable" onerror="imgFallbackList(this)">
+      <span class="prod-id-badge">${p.ID}</span>
+      <img src="${prodCands[0]}" data-cands="${prodData}" alt="${p.PRODUCTO}" loading="lazy" class="zoomable" onerror="imgFallbackList(this)">
     </div>
     <div class="prod-body">
       <span class="prod-cat">${allCats}</span>
-      <div class="prod-name">${p.name}</div>
+      <div class="prod-name">${p.PRODUCTO}</div>
       ${p.description ? `<div class="prod-desc">${p.description}</div>` : ''}
       <div class="prod-footer">
         ${priceHTML}
@@ -321,7 +321,7 @@ fetch(CSV_URL)
   .then(r=>r.text())
   .then(text=>{
     const rows=parseCSV(text);
-    allProducts = toObjects(rows).filter(p=>p.name);
+    allProducts = toObjects(rows).filter(p=>p.PRODUCTO);
     allProducts.forEach((p, i) => { p._rowIndex = i; });
     buildNav();
     buildFilterSidebar();
@@ -445,7 +445,7 @@ function render(){
   const term = document.getElementById('searchInput').value.trim().toLowerCase();
   if(term){
     list = list.filter(p => {
-      if(p.name.toLowerCase().includes(term)) return true;
+      if(p.PRODUCTO.toLowerCase().includes(term)) return true;
       for(let level=1; level<=MAX_LEVELS; level++){
         if(getCatLevel(p, level).toLowerCase().includes(term)) return true;
       }
@@ -457,7 +457,7 @@ function render(){
   const cmp =
     sortVal === 'price-asc' ? (a,b)=>getFinalPrice(a) - getFinalPrice(b) :
     sortVal === 'price-desc' ? (a,b)=>getFinalPrice(b) - getFinalPrice(a) :
-    sortVal === 'alpha' ? (a,b)=>a.name.localeCompare(b.name) :
+    sortVal === 'alpha' ? (a,b)=>a.PRODUCTO.localeCompare(b.PRODUCTO) :
     (a,b)=>b._rowIndex - a._rowIndex;
 
   list.sort((a,b)=>{
@@ -495,10 +495,10 @@ function renderProducts(){
   container.querySelectorAll('.add-cart-btn').forEach(btn=>{
     if(btn.disabled) return;
     btn.addEventListener('click', function(){
-      const p = allProducts.find(x => x.id === btn.dataset.id);
+      const p = allProducts.find(x => x.ID === btn.dataset.id);
       if(!p) return;
       const cands = productImgCandidates(p);
-      addToCart({ id:p.id, name:p.name, price:getFinalPrice(p), img:cands[0], cands:cands, folder:getCatLevel(p,1), fallbackImg:p.img, stock: getStockNum(p) });
+      addToCart({ id:p.ID, name:p.PRODUCTO, price:getFinalPrice(p), img:cands[0], cands:cands, folder:getCatLevel(p,1), fallbackImg:p.img, stock: getStockNum(p) });
       if(typeof openMiniCart === 'function') openMiniCart(3000);
       renderProducts();
     });
