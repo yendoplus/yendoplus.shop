@@ -250,6 +250,17 @@ function imgFallbackList(el){
   }
 }
 
+/* Si el texto de una categoria en el Excel no es como quieres mostrarlo en pantalla,
+   agrega aqui el texto de reemplazo (izquierda = como esta en el Excel, derecha = como se muestra) */
+const DISPLAY_ALIASES = {
+  'FIGURA': 'FIGURAS',
+  'PALOMERA': 'PALOMERAS'
+};
+function displayName(name){
+  const n = (name || '').trim();
+  return DISPLAY_ALIASES[n] || n;
+}
+
 function buildLevel(items, level, urlParams){
   const values=[...new Set(items.map(p=>getCatLevel(p, level)).filter(Boolean))];
   if(values.length === 0) return '';
@@ -262,10 +273,10 @@ function buildLevel(items, level, urlParams){
     const childHTML = buildLevel(filtered, level+1, newParams);
 
     if(level === 1){
-      return `<div class="nav-item"><a href="${href}">${v}</a>${childHTML}</div>`;
+      return `<div class="nav-item"><a href="${href}">${displayName(v)}</a>${childHTML}</div>`;
     }
     const hasChildren = childHTML !== '';
-    return `<div class="nav-subitem${hasChildren?' has-children':''}"><a href="${href}">${v}</a>${childHTML}</div>`;
+    return `<div class="nav-subitem${hasChildren?' has-children':''}"><a href="${href}">${displayName(v)}</a>${childHTML}</div>`;
   }).join('');
 
   if(level === 1) return linksHTML;
@@ -296,9 +307,9 @@ fetch(CSV_URL)
       const items=products.filter(p=>getCategory(p)===c);
       const repItem = items.find(p=>p.ID);
       return `<a href="category.html?cat=${encodeURIComponent(c)}" class="cat-tile">
-        <img ${tileImgAttrs('CATEGORIA', c, resolveFolder(c), repItem ? repItem.ID : null)} alt="${c}" loading="lazy">
+        <img ${tileImgAttrs('CATEGORIA', c, resolveFolder(c), repItem ? repItem.ID : null)} alt="${displayName(c)}" loading="lazy">
         <div class="cat-tile-overlay">
-          <h3>${c}</h3>
+          <h3>${displayName(c)}</h3>
           <span>${items.length} ítem${items.length===1?'':'s'}</span>
         </div>
       </a>`;

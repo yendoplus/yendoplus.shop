@@ -134,6 +134,17 @@ function getCatLevel(p, level){
   return (p['CATEGORIA'+level] || '').trim();
 }
 
+/* Si el texto de una categoria en el Excel no es como quieres mostrarlo en pantalla,
+   agrega aqui el texto de reemplazo (izquierda = como esta en el Excel, derecha = como se muestra) */
+const DISPLAY_ALIASES = {
+  'FIGURA': 'FIGURAS',
+  'PALOMERA': 'PALOMERAS'
+};
+function displayName(name){
+  const n = (name || '').trim();
+  return DISPLAY_ALIASES[n] || n;
+}
+
 /* Pocas extensiones, sin combinar mayusculas/minusculas del nombre: maximo 6 intentos por imagen,
    para no saturar GitHub Pages con peticiones fallidas (eso disparaba el bloqueo "Rate limit exceeded") */
 const IMG_EXTS = ['jpg','jpeg','png','JPG','webp','PNG'];
@@ -293,7 +304,7 @@ function productCardHTML(p){
     btnHTML = `<button type="button" class="add-cart-btn" data-id="${p.ID}">Agregar al carro</button>`;
   }
 
-  const allCats = [1,2,3,4].map(l=>getCatLevel(p,l)).filter(Boolean).join(' / ');
+  const allCats = [1,2,3,4].map(l=>displayName(getCatLevel(p,l))).filter(Boolean).join(' / ');
   const fichaHTML = p.url ? `<a class="prod-link" href="${p.url}" target="_blank">Ver ficha →</a>` : '';
 
   const prodCands = productImgCandidates(p);
@@ -351,7 +362,7 @@ fetch(CSV_URL)
   });
 
 function updateTitle(){
-  document.getElementById('catTitle').textContent = selectedLevels[0] || 'Todos los productos';
+  document.getElementById('catTitle').textContent = displayName(selectedLevels[0]) || 'Todos los productos';
 }
 
 function updateNavActiveState(){
@@ -388,7 +399,7 @@ function buildFilterSidebar(){
     div.className = 'cat-filter-box';
     div.innerHTML = `<select>
         <option value="">${placeholder}</option>
-        ${values.map(v=>`<option value="${v}"${v===currentVal?' selected':''}>${v}</option>`).join('')}
+        ${values.map(v=>`<option value="${v}"${v===currentVal?' selected':''}>${displayName(v)}</option>`).join('')}
       </select>`;
     container.appendChild(div);
 
@@ -425,10 +436,10 @@ function buildLevel(items, level, urlParams){
 
     if(level === 1){
       const isActive = v === (selectedLevels[0]||'') ? ' class="active-link"' : '';
-      return `<div class="nav-item"><a href="${href}"${isActive}>${v}</a>${childHTML}</div>`;
+      return `<div class="nav-item"><a href="${href}"${isActive}>${displayName(v)}</a>${childHTML}</div>`;
     }
     const hasChildren = childHTML !== '';
-    return `<div class="nav-subitem${hasChildren?' has-children':''}"><a href="${href}">${v}</a>${childHTML}</div>`;
+    return `<div class="nav-subitem${hasChildren?' has-children':''}"><a href="${href}">${displayName(v)}</a>${childHTML}</div>`;
   }).join('');
 
   if(level === 1) return linksHTML;
