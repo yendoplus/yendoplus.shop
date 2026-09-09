@@ -156,9 +156,21 @@ function getCatLevel(p, level){
   return (p['CATEGORIA'+level] || '').trim();
 }
 
+/* Busca una columna por varios nombres posibles (sin importar mayus/minus) */
+function getField(p, candidates){
+  const keys = Object.keys(p);
+  for(const cand of candidates){
+    const found = keys.find(k => k.toLowerCase() === cand.toLowerCase());
+    if(found && p[found]) return p[found];
+  }
+  return '';
+}
+function getID(p){ return getField(p, ['id','ID']); }
+function getPRODUCTO(p){ return getField(p, ['Producto','PRODUCTO','name']); }
+
 /* Pocas extensiones, sin combinar mayusculas/minusculas del nombre: maximo 6 intentos por imagen,
    para no saturar GitHub Pages con peticiones fallidas (eso disparaba el bloqueo "Rate limit exceeded") */
-const IMG_EXTS = ['jpg','jpeg','png','JPG','webp','PNG'];
+const IMG_EXTS = ['jpg','jpeg','png','webp','gif','JPG','JPEG','PNG','WEBP','GIF'];
 
 /* Codifica cada segmento de una ruta con carpetas (ej. "CATEGORIA/CARRETE") sin romper las barras "/" */
 function encodePath(path){
@@ -288,7 +300,7 @@ fetch(CSV_URL)
   .then(r=>r.text())
   .then(text=>{
     const rows=parseCSV(text);
-    const products=toObjects(rows).filter(p=>p.PRODUCTO);
+    const products=toObjects(rows).filter(p=>getPRODUCTO(p));
     const cats=[...new Set(products.map(getCategory).filter(Boolean))];
 
     const nav=document.getElementById('navCats');
@@ -305,9 +317,9 @@ fetch(CSV_URL)
 
     const tiles = catsSorted.map(c=>{
       const items=products.filter(p=>getCategory(p)===c);
-      const repItem = items.find(p=>p.ID);
+      const repItem = items.find(p=>getID(p));
       return `<a href="category.html?cat=${encodeURIComponent(c)}" class="cat-tile">
-        <img ${tileImgAttrs('CATEGORIA', c, resolveFolder(c), repItem ? repItem.ID : null)} alt="${displayName(c)}" loading="lazy">
+        <img ${tileImgAttrs('CATEGORIA', c, resolveFolder(c), repItem ? getID(repItem) : null)} alt="${displayName(c)}" loading="lazy">
         <div class="cat-tile-overlay">
           <h3>${displayName(c)}</h3>
           <span>${items.length} ítem${items.length===1?'':'s'}</span>
@@ -338,9 +350,9 @@ fetch(CSV_URL)
         track.innerHTML = series.map(s=>{
           const seriesItems = figuraItems.filter(p=>getCatLevel(p,2)===s);
           const count = seriesItems.length;
-          const repItem = seriesItems.find(p=>p.ID);
+          const repItem = seriesItems.find(p=>getID(p));
           return `<a href="category.html?cat=${encodeURIComponent(figuraCat)}&sub2=${encodeURIComponent(s)}" class="cat-tile cat-tile-small">
-            <img ${tileImgAttrs('CATEGORIA/SERIES', s, resolveFolder(figuraCat), repItem ? repItem.ID : null)} alt="${s}" loading="lazy">
+            <img ${tileImgAttrs('CATEGORIA/SERIES', s, resolveFolder(figuraCat), repItem ? getID(repItem) : null)} alt="${s}" loading="lazy">
             <div class="cat-tile-overlay">
               <h3>${s}</h3>
               <span>${count} ítem${count===1?'':'s'}</span>

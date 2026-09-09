@@ -134,6 +134,22 @@ function getCatLevel(p, level){
   return (p['CATEGORIA'+level] || '').trim();
 }
 
+/* Busca una columna por varios nombres posibles (sin importar mayus/minus), para que si
+   cambias el nombre de una columna en el Excel, el sitio la siga encontrando sola. */
+function getField(p, candidates){
+  const keys = Object.keys(p);
+  for(const cand of candidates){
+    const found = keys.find(k => k.toLowerCase() === cand.toLowerCase());
+    if(found && p[found]) return p[found];
+  }
+  return '';
+}
+function getID(p){ return getField(p, ['id','ID']); }
+function getPRODUCTO(p){ return getField(p, ['Producto','PRODUCTO','name']); }
+function getStockRaw(p){ return getField(p, ['Stock','stock']); }
+function getDescripcion(p){ return getField(p, ['Descripcion','description','Descripción']); }
+function getPriceRaw(p){ return getField(p, ['Precio','price']); }
+
 /* Si el texto de una categoria en el Excel no es como quieres mostrarlo en pantalla,
    agrega aqui el texto de reemplazo (izquierda = como esta en el Excel, derecha = como se muestra) */
 const DISPLAY_ALIASES = {
@@ -147,7 +163,7 @@ function displayName(name){
 
 /* Pocas extensiones, sin combinar mayusculas/minusculas del nombre: maximo 6 intentos por imagen,
    para no saturar GitHub Pages con peticiones fallidas (eso disparaba el bloqueo "Rate limit exceeded") */
-const IMG_EXTS = ['jpg','jpeg','png','JPG','webp','PNG'];
+const IMG_EXTS = ['jpg','jpeg','png','webp','gif','JPG','JPEG','PNG','WEBP','GIF'];
 
 /* Codifica cada segmento de una ruta con carpetas sin romper las barras "/" */
 function encodePath(path){
@@ -231,7 +247,7 @@ function imgFallbackList(el){
 }
 
 function getStockNum(p){
-  const n = parseInt(p.stock);
+  const n = parseInt(getStockRaw(p));
   return isNaN(n) ? 0 : n;
 }
 
@@ -247,7 +263,7 @@ function getDiscountPercent(p){
 }
 
 function getFinalPrice(p){
-  const base = parseFloat(p.price) || 0;
+  const base = parseFloat(getPriceRaw(p)) || 0;
   const discount = getDiscountPercent(p);
   return discount > 0 ? base * (1 - discount / 100) : base;
 }
@@ -270,7 +286,7 @@ function resolveFolder(name){
 
 function productImgCandidates(p){
   const cat1 = resolveFolder(getCatLevel(p,1));
-  const list = [...imgCandidatesIn(cat1, p.ID)];
+  const list = [...imgCandidatesIn(cat1, getID(p))];
   if(p.img) list.push(p.img);
   return list;
 }
@@ -278,10 +294,10 @@ function productImgCandidates(p){
 function productCardHTML(p){
   const stockNum = getStockNum(p);
   const inStock = stockNum > 0;
-  const inCart = qtyInCart(p.ID);
+  const inCart = qtyInCart(getID(p));
   const canAddMore = inStock && inCart < stockNum;
 
-  const basePrice = parseFloat(p.price) || 0;
+  const basePrice = parseFloat(getPriceRaw(p)) || 0;
   const discount = getDiscountPercent(p);
   const finalPrice = getFinalPrice(p);
 
@@ -301,7 +317,7 @@ function productCardHTML(p){
   } else if(!canAddMore){
     btnHTML = `<button type="button" class="add-cart-btn" disabled>Stock máximo en carrito</button>`;
   } else {
-    btnHTML = `<button type="button" class="add-cart-btn" data-id="${p.ID}">Agregar al carro</button>`;
+    btnHTML = `<button type="button" class="add-cart-btn" data-id="${getID(p)}">Agregar al carro</button>`;
   }
 
   const allCats = [1,2,3,4].map(l=>displayName(getCatLevel(p,l))).filter(Boolean).join(' / ');
@@ -313,13 +329,12 @@ function productCardHTML(p){
   return `<div class="prod-card">
     <div class="prod-img ${inStock?'':'out-of-stock'}">
       <span class="stock-badge ${inStock?'in':'out'}">${inStock?'En stock':'Agotado'}</span>
-      <span class="prod-id-badge">${p.ID}</span>
-      <img src="${prodCands[0]}" data-cands="${prodData}" alt="${p.PRODUCTO}" loading="lazy" class="zoomable" onerror="imgFallbackList(this)">
+      <img src="${prodCands[0]}" data-cands="${prodData}" alt="${getPRODUCTO(p)}" loading="lazy" class="zoomable" onerror="imgFallbackList(this)">
     </div>
     <div class="prod-body">
       <span class="prod-cat">${allCats}</span>
-      <div class="prod-name">${p.PRODUCTO}</div>
-      ${p.description ? `<div class="prod-desc">${p.description}</div>` : ''}
+      <div class="prod-name">${getPRODUCTO(p)}</div>
+      ${getDescripcion(p) ? `<div class="prod-desc">${getDescripcion(p)}</div>` : ''}
       <div class="prod-footer">
         ${priceHTML}
         ${fichaHTML}
@@ -343,7 +358,7 @@ fetch(CSV_URL)
   .then(r=>r.text())
   .then(text=>{
     const rows=parseCSV(text);
-    allProducts = toObjects(rows).filter(p=>p.PRODUCTO);
+    allProducts = toObjects(rows).filter(p=>getPRODUCTO(p));
     allProducts.forEach((p, i) => { p._rowIndex = i; });
     buildNav();
     buildFilterSidebar();
@@ -467,7 +482,7 @@ function render(){
   const term = document.getElementById('searchInput').value.trim().toLowerCase();
   if(term){
     list = list.filter(p => {
-      if(p.PRODUCTO.toLowerCase().includes(term)) return true;
+      if(getPRODUCTO(p).toLowerCase().includes(term)) return true;
       for(let level=1; level<=MAX_LEVELS; level++){
         if(getCatLevel(p, level).toLowerCase().includes(term)) return true;
       }
@@ -479,7 +494,7 @@ function render(){
   const cmp =
     sortVal === 'price-asc' ? (a,b)=>getFinalPrice(a) - getFinalPrice(b) :
     sortVal === 'price-desc' ? (a,b)=>getFinalPrice(b) - getFinalPrice(a) :
-    sortVal === 'alpha' ? (a,b)=>a.PRODUCTO.localeCompare(b.PRODUCTO) :
+    sortVal === 'alpha' ? (a,b)=>getPRODUCTO(a).localeCompare(getPRODUCTO(b)) :
     (a,b)=>b._rowIndex - a._rowIndex;
 
   list.sort((a,b)=>{
@@ -517,10 +532,10 @@ function renderProducts(){
   container.querySelectorAll('.add-cart-btn').forEach(btn=>{
     if(btn.disabled) return;
     btn.addEventListener('click', function(){
-      const p = allProducts.find(x => x.ID === btn.dataset.id);
+      const p = allProducts.find(x => getID(x) === btn.dataset.id);
       if(!p) return;
       const cands = productImgCandidates(p);
-      addToCart({ id:p.ID, name:p.PRODUCTO, price:getFinalPrice(p), img:cands[0], cands:cands, folder:getCatLevel(p,1), fallbackImg:p.img, stock: getStockNum(p) });
+      addToCart({ id:getID(p), name:getPRODUCTO(p), price:getFinalPrice(p), img:cands[0], cands:cands, folder:getCatLevel(p,1), fallbackImg:p.img, stock: getStockNum(p) });
       if(typeof openMiniCart === 'function') openMiniCart(3000);
       renderProducts();
     });
