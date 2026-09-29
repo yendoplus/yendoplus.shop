@@ -42,6 +42,14 @@
   </div>
 </header>
 
+<div class="search-bar-wrap">
+  <div class="search-bar">
+    <input type="text" id="topSearch" placeholder="Buscar figuras, model kits, pines…" autocomplete="off">
+    <button type="button" id="topSearchBtn">Buscar</button>
+    <div class="search-suggest" id="topSuggest"></div>
+  </div>
+</div>
+
 <section class="section" style="border-bottom:none;">
   <div class="section-head">
     <h2 id="catTitle">Categoría</h2>
@@ -414,6 +422,10 @@ fetch(CSV_URL)
     document.getElementById('onlyStockCheck').addEventListener('change', render);
     document.getElementById('showPreventaCheck').addEventListener('change', render);
 
+    const qParam = params.get('q');
+    if(qParam) document.getElementById('searchInput').value = qParam;
+
+    setupSearchBar(allProducts);
     render();
   })
   .catch(()=>{
@@ -625,6 +637,52 @@ function renderProducts(){
       renderProducts();
     });
   }
+}
+
+/* ===== Buscador con sugerencias desplegables (category: sincroniza con el buscador del panel) ===== */
+function setupSearchBar(products){
+  const input = document.getElementById('topSearch');
+  const box = document.getElementById('topSuggest');
+  const sideInput = document.getElementById('searchInput');
+  if(!input || !box) return;
+
+  input.value = sideInput.value;
+
+  function matches(term){
+    const t = term.trim().toLowerCase();
+    if(!t) return [];
+    return products.filter(p=>{
+      const hay = (getPRODUCTO(p)+' '+getCatLevel(p,1)+' '+getCatLevel(p,2)).toLowerCase();
+      return hay.includes(t);
+    }).slice(0, 8);
+  }
+
+  function renderSuggest(term){
+    const list = matches(term);
+    if(!list.length){ box.innerHTML=''; box.classList.remove('open'); return; }
+    box.innerHTML = list.map(p=>`<button type="button" class="suggest-row" data-name="${getPRODUCTO(p).replace(/"/g,'&quot;')}">
+        <span class="sg-name">${getPRODUCTO(p)}</span>
+        <span class="sg-cat">${displayName(getCatLevel(p,1))}</span>
+      </button>`).join('');
+    box.classList.add('open');
+  }
+
+  function apply(term){
+    input.value = term;
+    sideInput.value = term;
+    box.classList.remove('open');
+    render();
+  }
+
+  input.addEventListener('input', ()=>{ sideInput.value = input.value; render(); renderSuggest(input.value); });
+  input.addEventListener('focus', ()=> { if(input.value.trim()) renderSuggest(input.value); });
+  box.addEventListener('click', (e)=>{
+    const row = e.target.closest('.suggest-row');
+    if(row) apply(row.dataset.name);
+  });
+  document.addEventListener('click', (e)=>{ if(!e.target.closest('.search-bar')) box.classList.remove('open'); });
+  document.getElementById('topSearchBtn').addEventListener('click', ()=> apply(input.value));
+  input.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ apply(input.value); } });
 }
 
 function openImgModal(src, alt){

@@ -46,7 +46,13 @@
   </div>
 </header>
 
-<nav class="quick-nav" id="quickNav"></nav>
+<div class="search-bar-wrap">
+  <div class="search-bar">
+    <input type="text" id="topSearch" placeholder="Buscar figuras, model kits, pines…" autocomplete="off">
+    <button type="button" id="topSearchBtn">Buscar</button>
+    <div class="search-suggest" id="topSuggest"></div>
+  </div>
+</div>
 
 <section class="hero hero-compact">
   <div class="hero-copy">
@@ -428,10 +434,6 @@ fetch(CSV_URL)
       return countB - countA;
     });
 
-    document.getElementById('quickNav').innerHTML =
-      `<a href="category.html" class="qn-pill qn-all">Todo</a>` +
-      catsSorted.map(c=>`<a href="category.html?cat=${encodeURIComponent(c)}" class="qn-pill">${displayName(c)}</a>`).join('');
-
     const tiles = catsSorted.map(c=>{
       const items=products.filter(p=>getCategory(p)===c);
       const repItem = items.find(p=>getID(p));
@@ -489,6 +491,9 @@ fetch(CSV_URL)
     } else {
       document.getElementById('serieSection').style.display = 'none';
     }
+
+    /* ===== Buscador con sugerencias desplegables ===== */
+    setupSearchBar(products);
   })
   .catch(()=>{
     document.getElementById('catTiles').innerHTML =
@@ -522,6 +527,46 @@ if(heroImg){
       }, 300);
     }, 4000);
   }
+}
+
+/* ===== Buscador con sugerencias desplegables (index: navega al catálogo) ===== */
+function setupSearchBar(products){
+  const input = document.getElementById('topSearch');
+  const box = document.getElementById('topSuggest');
+  if(!input || !box) return;
+
+  function matches(term){
+    const t = term.trim().toLowerCase();
+    if(!t) return [];
+    return products.filter(p=>{
+      const hay = (getPRODUCTO(p)+' '+getCatLevel(p,1)+' '+getCatLevel(p,2)).toLowerCase();
+      return hay.includes(t);
+    }).slice(0, 8);
+  }
+
+  function renderSuggest(term){
+    const list = matches(term);
+    if(!list.length){ box.innerHTML=''; box.classList.remove('open'); return; }
+    box.innerHTML = list.map(p=>{
+      const cat1 = getCatLevel(p,1);
+      return `<a href="category.html?cat=${encodeURIComponent(cat1)}&q=${encodeURIComponent(getPRODUCTO(p))}" class="suggest-row">
+        <span class="sg-name">${getPRODUCTO(p)}</span>
+        <span class="sg-cat">${displayName(cat1)}</span>
+      </a>`;
+    }).join('');
+    box.classList.add('open');
+  }
+
+  input.addEventListener('input', ()=> renderSuggest(input.value));
+  input.addEventListener('focus', ()=> { if(input.value.trim()) renderSuggest(input.value); });
+  document.addEventListener('click', (e)=>{ if(!e.target.closest('.search-bar')) box.classList.remove('open'); });
+
+  function goSearch(){
+    const t = input.value.trim();
+    if(t) window.location.href = 'category.html?q=' + encodeURIComponent(t);
+  }
+  document.getElementById('topSearchBtn').addEventListener('click', goSearch);
+  input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') goSearch(); });
 }
 
 /* ===== BOTON SUBIR ARRIBA ===== */
