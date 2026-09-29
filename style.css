@@ -87,9 +87,9 @@
   }
   .hero-copy{max-width:720px;flex:1;min-width:0;}
   .hero-media{
-    flex:none;width:min(900px, 48vw);aspect-ratio:4/3;
+    flex:none;width:min(220px, 28vw);aspect-ratio:4/3;
     display:flex;align-items:center;justify-content:center;overflow:hidden;
-    border:6px solid var(--ink);border-radius:10px;background:var(--white);
+    border:4px solid var(--ink);border-radius:8px;background:var(--white);
   }
   .hero-media img{width:100%;height:100%;object-fit:contain;transition:opacity .3s ease;}
   .hero-copy .eyebrow{
@@ -239,7 +239,7 @@
     .cat-row .info h3{font-size:18px;}
     .cat-row .info p{display:none;}
     .hero{flex-direction:column;align-items:flex-start;}
-    .hero-media{width:min(500px, 85vw);order:-1;}
+    .hero-media{width:min(200px, 55vw);order:-1;}
   }
   @media (prefers-reduced-motion:reduce){
     *{transition:none !important;}
@@ -812,24 +812,26 @@ nav.main a.active-link{border-color:var(--red);color:var(--red-dark);}
   .car-arrow{width:30px;height:30px;font-size:14px;}
 }
 
-/* ===== BARRA DE CATEGORIAS RAPIDA (estilo LuffyStore) ===== */
+/* ===== BARRA DE CATEGORIAS RAPIDA (cuadricula con separacion clara) ===== */
 .quick-nav{
-  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
-  background:linear-gradient(90deg, var(--red), var(--red-dark));
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;
+  background:var(--red);
   padding:14px 5vw;
 }
 .qn-pill{
-  background:rgba(255,255,255,.14);color:#fff;font-weight:800;font-size:13px;
-  text-transform:uppercase;letter-spacing:.4px;padding:9px 18px;border-radius:999px;
-  transition:background .15s;white-space:nowrap;
+  background:var(--white);color:var(--ink);font-weight:800;font-size:13px;
+  text-transform:uppercase;letter-spacing:.4px;padding:12px 10px;border-radius:8px;
+  border:2px solid rgba(0,0,0,.12);
+  text-align:center;
+  transition:background .15s, transform .15s;
 }
-.qn-pill:hover{background:rgba(255,255,255,.3);}
-.qn-pill.qn-all{background:var(--ink);}
+.qn-pill:hover{background:var(--ink);color:#fff;transform:translateY(-2px);}
+.qn-pill.qn-all{background:var(--ink);color:#fff;border-color:var(--ink);}
 .qn-pill.qn-all:hover{background:#000;}
 
 @media (max-width:480px){
-  .quick-nav{padding:10px 4vw;gap:8px;overflow-x:auto;flex-wrap:nowrap;}
-  .qn-pill{padding:7px 14px;font-size:11.5px;}
+  .quick-nav{padding:10px 4vw;gap:8px;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));}
+  .qn-pill{padding:10px 8px;font-size:11px;}
 }
 
 /* ===== HERO COMPACTO ===== */
