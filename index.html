@@ -67,24 +67,36 @@
   </div>
 </section>
 
+<section class="section" id="recientes">
+  <div class="section-head">
+    <h2>Recién llegados</h2>
+    <span class="sub">Lo último que agregamos al catálogo</span>
+  </div>
+  <div class="carousel-wrap">
+    <button type="button" id="recentPrev" class="car-arrow car-arrow-left" aria-label="Anterior">‹</button>
+    <div class="carousel-track" id="recentGrid"></div>
+    <button type="button" id="recentNext" class="car-arrow car-arrow-right" aria-label="Siguiente">›</button>
+  </div>
+</section>
+
+<section class="section" id="preventaSection">
+  <div class="section-head">
+    <h2>Preventas</h2>
+    <span class="sub">Reserva lo que está en camino</span>
+  </div>
+  <div class="carousel-wrap">
+    <button type="button" id="preventaPrev" class="car-arrow car-arrow-left" aria-label="Anterior">‹</button>
+    <div class="carousel-track" id="preventaGrid"></div>
+    <button type="button" id="preventaNext" class="car-arrow car-arrow-right" aria-label="Siguiente">›</button>
+  </div>
+</section>
+
 <section class="section" id="categorias" style="border-bottom:none;">
   <div class="section-head">
     <h2>Categorías</h2>
     <span class="sub" id="catSub">Elige un tipo de producto</span>
   </div>
   <div class="cat-tiles" id="catTiles"></div>
-</section>
-
-<section class="section" id="recientes">
-  <div class="section-head">
-    <h2>Recién llegados</h2>
-    <span class="sub">Lo último que agregamos al catálogo</span>
-  </div>
-  <div class="recent-carousel-wrap">
-    <button type="button" id="recentPrev" class="car-arrow car-arrow-left" aria-label="Anterior">‹</button>
-    <div class="recent-grid" id="recentGrid"></div>
-    <button type="button" id="recentNext" class="car-arrow car-arrow-right" aria-label="Siguiente">›</button>
-  </div>
 </section>
 
 <section class="section" id="serieSection">
@@ -351,43 +363,42 @@ fetch(CSV_URL)
     const rows=parseCSV(text);
     const products=toObjects(rows).filter(p=>getPRODUCTO(p));
 
-    /* ===== Recien llegados: ultimas filas agregadas al Excel, con foto/precio/estado real ===== */
-    const recent = products.filter(p=>!isPreventaProduct(p)).slice(-20).reverse();
-    if(recent.length > 0){
-      document.getElementById('recentGrid').innerHTML = recent.map(p=>{
-        const isPreventa = isPreventaProduct(p);
-        const isForcedOut = getEstado(p) === 'agotado';
-        const stockNum = isForcedOut ? 0 : getStockNum(p);
-        const inStock = stockNum > 0 || isPreventa;
-        const price = parsePrice(getPriceRaw(p));
-        const cat1 = resolveFolder(getCatLevel(p,1));
-        const cands = imgCandidatesIn(cat1, getID(p));
-        const candsData = JSON.stringify(cands).replace(/"/g, '&quot;');
+    /* ===== Tarjeta compartida para los carruseles (Recien llegados / Preventas) ===== */
+    function recentCardHTML(p){
+      const isPreventa = isPreventaProduct(p);
+      const isForcedOut = getEstado(p) === 'agotado';
+      const stockNum = isForcedOut ? 0 : getStockNum(p);
+      const inStock = stockNum > 0 || isPreventa;
+      const price = parsePrice(getPriceRaw(p));
+      const cat1 = resolveFolder(getCatLevel(p,1));
+      const cands = imgCandidatesIn(cat1, getID(p));
+      const candsData = JSON.stringify(cands).replace(/"/g, '&quot;');
 
-        const badgeClass = isPreventa ? 'preventa' : (inStock ? 'in' : 'out');
-        const badgeText = isPreventa ? 'Preventa' : (inStock ? 'En stock' : 'Agotado');
+      const badgeClass = isPreventa ? 'preventa' : (inStock ? 'in' : 'out');
+      const badgeText = isPreventa ? 'Preventa' : (inStock ? 'En stock' : 'Agotado');
 
-        let btnHTML;
-        if(isPreventa){
-          btnHTML = `<button type="button" class="add-cart-btn preventa-btn recent-add" data-id="${getID(p)}">Reservar</button>`;
-        } else if(!inStock){
-          btnHTML = `<button type="button" class="add-cart-btn recent-add" disabled>Agotado</button>`;
-        } else {
-          btnHTML = `<button type="button" class="add-cart-btn recent-add" data-id="${getID(p)}">Agregar</button>`;
-        }
+      let btnHTML;
+      if(isPreventa){
+        btnHTML = `<button type="button" class="add-cart-btn preventa-btn recent-add" data-id="${getID(p)}">Reservar</button>`;
+      } else if(!inStock){
+        btnHTML = `<button type="button" class="add-cart-btn recent-add" disabled>Agotado</button>`;
+      } else {
+        btnHTML = `<button type="button" class="add-cart-btn recent-add" data-id="${getID(p)}">Agregar</button>`;
+      }
 
-        return `<div class="recent-card">
-          <div class="recent-img">
-            <span class="stock-badge ${badgeClass}">${badgeText}</span>
-            <img src="${cands[0]}" data-cands="${candsData}" alt="${getPRODUCTO(p)}" loading="lazy" onerror="imgFallbackList(this)">
-          </div>
-          <div class="recent-name">${getPRODUCTO(p)}</div>
-          ${inStock ? `<div class="price"><span class="yn">S/</span>${price.toFixed(2)}</div>` : ''}
-          ${btnHTML}
-        </div>`;
-      }).join('');
+      return `<div class="recent-card">
+        <div class="recent-img">
+          <span class="stock-badge ${badgeClass}">${badgeText}</span>
+          <img src="${cands[0]}" data-cands="${candsData}" alt="${getPRODUCTO(p)}" loading="lazy" onerror="imgFallbackList(this)">
+        </div>
+        <div class="recent-name">${getPRODUCTO(p)}</div>
+        ${inStock ? `<div class="price"><span class="yn">S/</span>${price.toFixed(2)}</div>` : ''}
+        ${btnHTML}
+      </div>`;
+    }
 
-      document.querySelectorAll('.recent-add').forEach(btn=>{
+    function wireRecentButtons(container){
+      container.querySelectorAll('.recent-add').forEach(btn=>{
         if(btn.disabled) return;
         btn.addEventListener('click', function(){
           const p = products.find(x => getID(x) === btn.dataset.id);
@@ -398,29 +409,58 @@ fetch(CSV_URL)
           if(typeof openMiniCart === 'function') openMiniCart(3000);
         });
       });
-
-      /* Carrusel: flechas + desplazamiento automatico cada 4 segundos */
-      const recentTrack = document.getElementById('recentGrid');
-      const scrollByCard = (dir)=>{
-        const card = recentTrack.querySelector('.recent-card');
-        const step = card ? card.getBoundingClientRect().width + 18 : 200;
-        recentTrack.scrollBy({left: dir * step * 2, behavior:'smooth'});
-      };
-      document.getElementById('recentPrev').addEventListener('click', ()=> scrollByCard(-1));
-      document.getElementById('recentNext').addEventListener('click', ()=> scrollByCard(1));
-
-      let recentAutoTimer = setInterval(()=>{
-        const maxScroll = recentTrack.scrollWidth - recentTrack.clientWidth;
-        if(recentTrack.scrollLeft >= maxScroll - 5){
-          recentTrack.scrollTo({left:0, behavior:'smooth'});
-        } else {
-          scrollByCard(1);
-        }
-      }, 4000);
-      recentTrack.addEventListener('mouseenter', ()=> clearInterval(recentAutoTimer));
-    } else {
-      document.getElementById('recientes').style.display = 'none';
     }
+
+    /* Carrusel infinito por indice: 1-2-3 -> 2-3-4 -> 3-4-1 ... sin fin, con flechas + automatico */
+    function makeInfiniteCarousel(opts){
+      const track = document.getElementById(opts.trackId);
+      const section = document.getElementById(opts.sectionId);
+      const items = opts.items;
+      if(!track) return;
+      if(!items.length){ if(section) section.style.display = 'none'; return; }
+
+      let idx = 0;
+      const vis = Math.min(opts.visibleCount, items.length);
+
+      function draw(){
+        const slice = [];
+        for(let i=0;i<vis;i++) slice.push(items[(idx+i) % items.length]);
+        track.innerHTML = slice.map(recentCardHTML).join('');
+        wireRecentButtons(track);
+      }
+      function next(){ idx = (idx+1) % items.length; draw(); }
+      function prev(){ idx = (idx-1+items.length) % items.length; draw(); }
+
+      const prevBtn = document.getElementById(opts.prevId);
+      const nextBtn = document.getElementById(opts.nextId);
+      if(prevBtn) prevBtn.addEventListener('click', prev);
+      if(nextBtn) nextBtn.addEventListener('click', next);
+
+      draw();
+
+      if(items.length > vis){
+        let timer = setInterval(next, opts.autoMs || 4000);
+        track.addEventListener('mouseenter', ()=> clearInterval(timer));
+      } else if(prevBtn && nextBtn){
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+      }
+    }
+
+    /* ===== Recien llegados: solo con stock real, sin agotados ni preventa ===== */
+    makeInfiniteCarousel({
+      trackId:'recentGrid', prevId:'recentPrev', nextId:'recentNext', sectionId:'recientes',
+      items: products.filter(p=> !isPreventaProduct(p) && getStockNum(p) > 0).slice(-20).reverse(),
+      visibleCount: 3, autoMs: 4000
+    });
+
+    /* ===== Preventas: solo lo que esta en preventa ===== */
+    makeInfiniteCarousel({
+      trackId:'preventaGrid', prevId:'preventaPrev', nextId:'preventaNext', sectionId:'preventaSection',
+      items: products.filter(p=> isPreventaProduct(p)),
+      visibleCount: 3, autoMs: 4600
+    });
+
     const cats=[...new Set(products.map(getCategory).filter(Boolean))];
 
     const nav=document.getElementById('navCats');

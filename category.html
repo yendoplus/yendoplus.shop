@@ -69,6 +69,11 @@
           <button type="button" id="clearFilters" class="clear-filters">Limpiar selección</button>
         </div>
         <div id="filterLevels" class="cat-filter-stack"></div>
+
+        <div class="toggle-box-row">
+          <button type="button" id="onlyStockToggle" class="toggle-box active">Stock</button>
+          <button type="button" id="showPreventaToggle" class="toggle-box">Preventa</button>
+        </div>
       </div>
 
       <div class="sidebar-block">
@@ -79,20 +84,6 @@
           <option value="price-desc">Precio: mayor a menor</option>
           <option value="alpha">Alfabético (A-Z)</option>
         </select>
-      </div>
-
-      <div class="sidebar-block">
-        <label class="checkbox-label">
-          <input type="checkbox" id="onlyStockCheck" checked>
-          Solo mostrar stock disponible
-        </label>
-      </div>
-
-      <div class="sidebar-block">
-        <label class="checkbox-label">
-          <input type="checkbox" id="showPreventaCheck">
-          Mostrar productos en preventa
-        </label>
       </div>
 
       <a href="index.html" class="back-link" style="text-align:left;margin-top:20px;">← Ver todas las categorías</a>
@@ -369,10 +360,7 @@ function productCardHTML(p){
   const preventaNoticeHTML = (stockNum > 0 && preventaUnits > 0)
     ? `<div class="preventa-notice">🕐 +${preventaUnits} más en camino (consulta por preventa)</div>`
     : '';
-  const descHTML = desc ? `<div class="prod-desc-wrap">
-    <div class="prod-desc">${desc}</div>
-    <button type="button" class="desc-toggle">Ver más</button>
-  </div>` : '';
+  const descHTML = desc ? `<div class="prod-desc">${desc}</div>` : '';
 
   const prodCands = productImgCandidates(p);
   const prodData = JSON.stringify(prodCands).replace(/"/g, '&quot;');
@@ -389,8 +377,8 @@ function productCardHTML(p){
         ${priceHTML}
       </div>
       ${preventaNoticeHTML}
-      ${moreInfoHTML}
       ${descHTML}
+      ${moreInfoHTML}
       ${btnHTML}
     </div>
   </div>`;
@@ -419,8 +407,12 @@ fetch(CSV_URL)
 
     document.getElementById('searchInput').addEventListener('input', render);
     document.getElementById('sortSelect').addEventListener('change', render);
-    document.getElementById('onlyStockCheck').addEventListener('change', render);
-    document.getElementById('showPreventaCheck').addEventListener('change', render);
+    document.getElementById('onlyStockToggle').addEventListener('click', function(){
+      this.classList.toggle('active'); render();
+    });
+    document.getElementById('showPreventaToggle').addEventListener('click', function(){
+      this.classList.toggle('active'); render();
+    });
 
     const qParam = params.get('q');
     if(qParam) document.getElementById('searchInput').value = qParam;
@@ -537,17 +529,20 @@ function isPreventaProduct(p){
 }
 
 function render(){
-  let list = allProducts.filter(p => matchesSelection(p, selectedLevels.length));
+  const term = document.getElementById('searchInput').value.trim().toLowerCase();
 
-  if(document.getElementById('onlyStockCheck').checked){
+  let list = term
+    ? allProducts.slice()
+    : allProducts.filter(p => matchesSelection(p, selectedLevels.length));
+
+  if(document.getElementById('onlyStockToggle').classList.contains('active')){
     list = list.filter(p => getStockNum(p) > 0 || isPreventaProduct(p));
   }
 
-  if(!document.getElementById('showPreventaCheck').checked){
+  if(!document.getElementById('showPreventaToggle').classList.contains('active')){
     list = list.filter(p => !isPreventaProduct(p));
   }
 
-  const term = document.getElementById('searchInput').value.trim().toLowerCase();
   if(term){
     list = list.filter(p => {
       if(getPRODUCTO(p).toLowerCase().includes(term)) return true;
@@ -611,15 +606,6 @@ function renderProducts(){
 
   container.querySelectorAll('.zoomable').forEach(img=>{
     img.addEventListener('click', ()=> openImgModal(img.src, img.alt));
-  });
-
-  container.querySelectorAll('.desc-toggle').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const wrap = btn.closest('.prod-desc-wrap');
-      const desc = wrap.querySelector('.prod-desc');
-      const expanded = desc.classList.toggle('expanded');
-      btn.textContent = expanded ? 'Ver menos' : 'Ver más';
-    });
   });
 
   const loadMoreBtn = document.getElementById('loadMoreBtn');
