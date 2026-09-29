@@ -46,16 +46,26 @@
   </div>
 </header>
 
-<section class="hero">
+<section class="hero hero-compact">
   <div class="hero-copy">
     <span class="eyebrow">FIGURAS · TOMICA · HOT WHEELS</span>
-    <h1><span class="yen">YEN</span><span class="d">D</span><span class="o">O</span> POR LAS<br>MEJORES PIEZAS</h1>
+    <h1 class="hero-small"><span class="yen">YEN</span><span class="d">D</span><span class="o">O</span> POR LAS MEJORES PIEZAS</h1>
     <p>Como el yen japonés, en Yendo Plus siempre estamos en movimiento: figuras de anime, autos a escala y coleccionables importados, con catálogo actualizado directo desde nuestro inventario.</p>
     <a class="hero-cta" href="#categorias">Ver categorías ↓</a>
   </div>
   <div class="hero-media">
     <img id="heroSlide" src="A/CATEGORIA/CARRETE/foto4seg0.jpg" alt="Yendo Plus">
   </div>
+</section>
+
+<nav class="quick-nav" id="quickNav"></nav>
+
+<section class="section" id="categorias" style="border-bottom:none;">
+  <div class="section-head">
+    <h2>Categorías</h2>
+    <span class="sub" id="catSub">Elige un tipo de producto</span>
+  </div>
+  <div class="cat-tiles" id="catTiles"></div>
 </section>
 
 <section class="section" id="recientes">
@@ -68,14 +78,6 @@
     <div class="recent-grid" id="recentGrid"></div>
     <button type="button" id="recentNext" class="car-arrow car-arrow-right" aria-label="Siguiente">›</button>
   </div>
-</section>
-
-<section class="section" id="categorias" style="border-bottom:none;">
-  <div class="section-head">
-    <h2>Categorías</h2>
-    <span class="sub" id="catSub">Elige un tipo de producto</span>
-  </div>
-  <div class="cat-tiles" id="catTiles"></div>
 </section>
 
 <section class="section" id="serieSection">
@@ -425,6 +427,10 @@ fetch(CSV_URL)
       const countB = products.filter(p=>getCategory(p)===b).length;
       return countB - countA;
     });
+
+    document.getElementById('quickNav').innerHTML =
+      `<a href="category.html" class="qn-pill qn-all">Todo</a>` +
+      catsSorted.map(c=>`<a href="category.html?cat=${encodeURIComponent(c)}" class="qn-pill">${displayName(c)}</a>`).join('');
 
     const tiles = catsSorted.map(c=>{
       const items=products.filter(p=>getCategory(p)===c);

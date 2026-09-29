@@ -6,7 +6,7 @@
     --ink:#141414;
     --white:#ffffff;
   }
-  *{margin:0;padding:0;box-sizing:border-box;}
+  *{margin:0;padding:0;box-sizing:border-box;overflow-wrap:break-word;}
   html{scroll-behavior:smooth;overflow-x:hidden;width:100%;}
   body{
     font-family:'Work Sans', sans-serif;
@@ -810,4 +810,31 @@ nav.main a.active-link{border-color:var(--red);color:var(--red-dark);}
 
 @media (max-width:480px){
   .car-arrow{width:30px;height:30px;font-size:14px;}
+}
+
+/* ===== BARRA DE CATEGORIAS RAPIDA (estilo LuffyStore) ===== */
+.quick-nav{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  background:linear-gradient(90deg, var(--red), var(--red-dark));
+  padding:14px 5vw;
+}
+.qn-pill{
+  background:rgba(255,255,255,.14);color:#fff;font-weight:800;font-size:13px;
+  text-transform:uppercase;letter-spacing:.4px;padding:9px 18px;border-radius:999px;
+  transition:background .15s;white-space:nowrap;
+}
+.qn-pill:hover{background:rgba(255,255,255,.3);}
+.qn-pill.qn-all{background:var(--ink);}
+.qn-pill.qn-all:hover{background:#000;}
+
+@media (max-width:480px){
+  .quick-nav{padding:10px 4vw;gap:8px;overflow-x:auto;flex-wrap:nowrap;}
+  .qn-pill{padding:7px 14px;font-size:11.5px;}
+}
+
+/* ===== HERO COMPACTO ===== */
+.hero-compact{padding-top:48px;padding-bottom:36px;}
+.hero-small{font-size:clamp(26px,4.5vw,52px) !important;margin-bottom:16px !important;}
+@media (max-width:800px){
+  .hero-compact{padding-top:28px;padding-bottom:24px;}
 }
