@@ -62,8 +62,10 @@
     <p class="hero-feria">📍 Todos los sábados en Feria Grau<br>Stand 1K — Av. Miguel Grau 122, La Victoria</p>
     <a class="hero-cta" href="#categorias">Ver categorías ↓</a>
   </div>
-  <div class="hero-media">
-    <img id="heroSlide" src="A/CATEGORIA/CARRETE/foto4seg0.jpg" alt="Yendo Plus">
+  <div class="hero-media hero-media-3">
+    <div class="hero-photo"><img id="heroSlide0" alt="Yendo Plus"></div>
+    <div class="hero-photo"><img id="heroSlide1" alt="Yendo Plus"></div>
+    <div class="hero-photo"><img id="heroSlide2" alt="Yendo Plus"></div>
   </div>
 </section>
 
@@ -548,30 +550,36 @@ fetch(CSV_URL)
       '<div class="empty-state">No se pudo cargar el catálogo en este momento. Verifica tu conexión o intenta más tarde.</div>';
   });
 
-/* ===== SLIDESHOW DEL HERO (cambia de foto cada 4 segundos) ===== */
+/* ===== SLIDESHOW DEL HERO: 3 fotos separadas, avanzan solas cada 4 segundos ===== */
 /* Agrega o quita nombres aqui para cambiar que fotos rotan (deben estar en CATEGORIA/CARRETE/) */
 const heroImages = ['FOTO4SEG0', 'FOTO4SEG1', 'FOTO4SEG2', 'FOTO4SEG3'];
 const HERO_FOLDER = 'CATEGORIA/CARRETE';
-const heroImg = document.getElementById('heroSlide');
+const heroSlots = [document.getElementById('heroSlide0'), document.getElementById('heroSlide1'), document.getElementById('heroSlide2')]
+  .filter(Boolean);
 
-function setHeroSlide(name){
-  delete heroImg.dataset.candidatesIn;
-  delete heroImg.dataset.tryIdxIn;
-  heroImg.onerror = function(){ imgFallbackIn(heroImg, HERO_FOLDER, name); };
-  heroImg.src = imgFirstSrcIn(HERO_FOLDER, name);
+function setHeroSlide(imgEl, name){
+  delete imgEl.dataset.candidatesIn;
+  delete imgEl.dataset.tryIdxIn;
+  imgEl.onerror = function(){ imgFallbackIn(imgEl, HERO_FOLDER, name); };
+  imgEl.src = imgFirstSrcIn(HERO_FOLDER, name);
 }
 
-if(heroImg){
-  setHeroSlide(heroImages[0]);
+if(heroSlots.length){
+  let heroIdx = 0;
+  function drawHeroSlots(){
+    heroSlots.forEach((el, i)=>{
+      setHeroSlide(el, heroImages[(heroIdx + i) % heroImages.length]);
+    });
+  }
+  drawHeroSlots();
 
-  if(heroImages.length > 1){
-    let heroIdx = 0;
+  if(heroImages.length > heroSlots.length){
     setInterval(()=>{
       heroIdx = (heroIdx + 1) % heroImages.length;
-      heroImg.style.opacity = 0;
+      heroSlots.forEach(el => el.style.opacity = 0);
       setTimeout(()=>{
-        setHeroSlide(heroImages[heroIdx]);
-        heroImg.style.opacity = 1;
+        drawHeroSlots();
+        heroSlots.forEach(el => el.style.opacity = 1);
       }, 300);
     }, 4000);
   }
