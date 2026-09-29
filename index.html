@@ -48,7 +48,7 @@
 
 <div class="search-bar-wrap">
   <div class="search-bar">
-    <input type="text" id="topSearch" placeholder="Buscar figuras, model kits, pines…" autocomplete="off">
+    <input type="text" id="topSearch" placeholder="Buscar figuras, model kits, palomeras…" autocomplete="off">
     <button type="button" id="topSearchBtn">Buscar</button>
     <div class="search-suggest" id="topSuggest"></div>
   </div>
@@ -352,7 +352,7 @@ fetch(CSV_URL)
     const products=toObjects(rows).filter(p=>getPRODUCTO(p));
 
     /* ===== Recien llegados: ultimas filas agregadas al Excel, con foto/precio/estado real ===== */
-    const recent = products.slice(-20).reverse();
+    const recent = products.filter(p=>!isPreventaProduct(p)).slice(-20).reverse();
     if(recent.length > 0){
       document.getElementById('recentGrid').innerHTML = recent.map(p=>{
         const isPreventa = isPreventaProduct(p);
