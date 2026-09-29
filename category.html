@@ -53,7 +53,18 @@
 <section class="section" style="border-bottom:none;">
   <div class="section-head">
     <h2 id="catTitle">Categoría</h2>
-    <span class="sub" id="catCount">Cargando…</span>
+    <div class="count-and-rows">
+      <span class="sub" id="catCount">Cargando…</span>
+      <label class="rows-select-label">
+        Ver
+        <select id="rowsPerView">
+          <option value="3">3 filas</option>
+          <option value="6" selected>6 filas</option>
+          <option value="9">9 filas</option>
+        </select>
+        por vez
+      </label>
+    </div>
   </div>
 
   <div class="cat-page-layout">
@@ -68,12 +79,13 @@
           <label style="margin-bottom:0;">Categoría</label>
           <button type="button" id="clearFilters" class="clear-filters">Limpiar selección</button>
         </div>
-        <div id="filterLevels" class="cat-filter-stack"></div>
 
         <div class="toggle-box-row">
           <button type="button" id="onlyStockToggle" class="toggle-box active">Stock</button>
           <button type="button" id="showPreventaToggle" class="toggle-box">Preventa</button>
         </div>
+
+        <div id="filterLevels" class="cat-filter-stack"></div>
       </div>
 
       <div class="sidebar-block">
@@ -413,6 +425,11 @@ fetch(CSV_URL)
     document.getElementById('showPreventaToggle').addEventListener('click', function(){
       this.classList.toggle('active'); render();
     });
+    document.getElementById('rowsPerView').addEventListener('change', function(){
+      PAGE_SIZE = getRowsPerView() * 3;
+      visibleCount = PAGE_SIZE;
+      render();
+    });
 
     const qParam = params.get('q');
     if(qParam) document.getElementById('searchInput').value = qParam;
@@ -488,8 +505,15 @@ document.getElementById('clearFilters').addEventListener('click', ()=>{
 
 /* ===== Nav superior con menu en cascada (CATEGORIA1 -> 2 -> 3 -> 4, tantos niveles como haya datos) ===== */
 function buildLevel(items, level, urlParams){
-  const values=[...new Set(items.map(p=>getCatLevel(p, level)).filter(Boolean))];
+  let values=[...new Set(items.map(p=>getCatLevel(p, level)).filter(Boolean))];
   if(values.length === 0) return '';
+  if(level === 1){
+    values = values.sort((a,b)=>{
+      const countA = items.filter(p=>getCatLevel(p,1)===a).length;
+      const countB = items.filter(p=>getCatLevel(p,1)===b).length;
+      return countB - countA;
+    });
+  }
 
   const linksHTML = values.map(v=>{
     const key = level===1 ? 'cat' : `sub${level}`;
@@ -517,7 +541,11 @@ function buildNav(){
   nav.innerHTML = `<div class="nav-item"><a href="category.html"${todoActive}>Todo</a></div>` + buildLevel(allProducts, 1, {});
 }
 
-const PAGE_SIZE = 24;
+function getRowsPerView(){
+  const el = document.getElementById('rowsPerView');
+  return el ? parseInt(el.value) : 6;
+}
+let PAGE_SIZE = getRowsPerView() * 3;
 let currentList = [];
 let visibleCount = PAGE_SIZE;
 

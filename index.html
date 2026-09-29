@@ -335,8 +335,15 @@ function displayName(name){
 }
 
 function buildLevel(items, level, urlParams){
-  const values=[...new Set(items.map(p=>getCatLevel(p, level)).filter(Boolean))];
+  let values=[...new Set(items.map(p=>getCatLevel(p, level)).filter(Boolean))];
   if(values.length === 0) return '';
+  if(level === 1){
+    values = values.sort((a,b)=>{
+      const countA = items.filter(p=>getCatLevel(p,1)===a).length;
+      const countB = items.filter(p=>getCatLevel(p,1)===b).length;
+      return countB - countA;
+    });
+  }
 
   const linksHTML = values.map(v=>{
     const key = level===1 ? 'cat' : `sub${level}`;
