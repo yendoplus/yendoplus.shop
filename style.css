@@ -27,7 +27,7 @@
   /* ===== HEADER ===== */
   header.site{
     display:flex;align-items:center;justify-content:space-between;
-    padding:26px 5vw;
+    padding:26px 5vw;gap:28px;
     border-bottom:1px solid var(--gray-line);
     position:sticky;top:0;background:var(--white);z-index:50;
   }
@@ -101,6 +101,11 @@
   .hero-copy h1 .d{color:var(--red);}
   .hero-copy h1 .o{color:var(--gray);}
   .hero-copy p{color:#4a4a4a;font-size:18px;line-height:1.65;margin-bottom:28px;max-width:540px;}
+  .hero-feria{
+    font-size:15px !important;font-weight:700;color:var(--red-dark) !important;
+    background:var(--gray-line);display:inline-block;padding:10px 16px;
+    border-radius:8px;line-height:1.5 !important;
+  }
   .hero-cta{
     display:inline-flex;align-items:center;gap:8px;
     color:var(--ink);
