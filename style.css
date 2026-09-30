@@ -178,10 +178,10 @@
   .preventa-btn:hover{background:#5a2fc2 !important;}
   .prod-body{display:flex;flex-direction:column;flex:1;gap:6px;}
   .prod-cat{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--red);}
-  .prod-name{font-size:15px;font-weight:600;line-height:1.4;
+  .prod-name{font-size:21px;font-weight:600;line-height:1.4;
     display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
   .prod-footer{display:flex;align-items:center;justify-content:space-between;margin-top:4px;border-top:1px solid var(--gray-line);padding-top:8px;}
-  .price{font-family:'Anton';font-size:20px;color:var(--ink);}
+  .price{font-family:'Anton';font-size:28px;color:var(--ink);}
   .price .yn{color:var(--red);margin-right:2px;}
   .prod-link{font-size:12.5px;font-weight:700;color:var(--gray);}
   .prod-link:hover{color:var(--red-dark);}
@@ -521,10 +521,10 @@
   .prod-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:16px 12px;}
   .cat-tiles{grid-template-columns:1fr;gap:16px;}
   .cat-tiles-small{grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;}
-  .prod-name{font-size:13px;}
-  .price{font-size:16px;}
+  .prod-name{font-size:18px;}
+  .price{font-size:22px;}
   .stock-badge{font-size:9px;padding:4px 7px;bottom:6px;right:6px;border-radius:4px;}
-  .price-old{font-size:12px;}
+  .price-old{font-size:17px;}
   .discount-badge{font-size:9px;padding:2px 5px;}
 
   .cat-row{gap:14px;padding:16px 2px;}
@@ -678,14 +678,14 @@ nav.main a.active-link{border-color:var(--red);color:var(--red-dark);}
 /* ===== PRECIO CON DESCUENTO ===== */
 .price-wrap{display:flex;align-items:center;flex-wrap:wrap;gap:6px;}
 .price-old{
-  font-family:'Work Sans';font-size:13px;font-weight:600;color:var(--gray);
+  font-family:'Work Sans';font-size:18px;font-weight:600;color:var(--gray);
   text-decoration:line-through;
 }
 .discount-badge{
   background:var(--red);color:#ffffff;font-size:11px;font-weight:800;
   padding:3px 7px;border-radius:4px;letter-spacing:.3px;
 }
-.price-new{font-family:'Anton';font-size:20px;color:var(--ink);}
+.price-new{font-family:'Anton';font-size:28px;color:var(--ink);}
 .price-new .yn{color:var(--red);margin-right:2px;}
 
 
@@ -765,10 +765,10 @@ nav.main a.active-link{border-color:var(--red);color:var(--red-dark);}
   font-size:9px;padding:3px 5px;
 }
 .recent-name{
-  font-size:12px;font-weight:600;line-height:1.3;
+  font-size:17px;font-weight:600;line-height:1.3;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
 }
-.recent-card .price{font-size:12px;}
+.recent-card .price{font-size:17px;}
 .recent-card .add-cart-btn{margin-top:auto;padding:6px 0;font-size:10px;}
 
 
