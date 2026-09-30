@@ -53,18 +53,7 @@
 <section class="section" style="border-bottom:none;">
   <div class="section-head">
     <h2 id="catTitle">Categoría</h2>
-    <div class="count-and-rows">
-      <span class="sub" id="catCount">Cargando…</span>
-      <label class="rows-select-label">
-        Ver
-        <select id="rowsPerView">
-          <option value="3">3 filas</option>
-          <option value="6" selected>6 filas</option>
-          <option value="9">9 filas</option>
-        </select>
-        por vez
-      </label>
-    </div>
+    <span class="sub" id="catCount">Cargando…</span>
   </div>
 
   <div class="cat-page-layout">
@@ -82,7 +71,7 @@
 
         <div class="toggle-box-row">
           <button type="button" id="onlyStockToggle" class="toggle-box active">Stock</button>
-          <button type="button" id="showPreventaToggle" class="toggle-box">Preventa</button>
+          <button type="button" id="showPreventaToggle" class="toggle-box active">Preventa</button>
         </div>
 
         <div id="filterLevels" class="cat-filter-stack"></div>
@@ -425,11 +414,6 @@ fetch(CSV_URL)
     document.getElementById('showPreventaToggle').addEventListener('click', function(){
       this.classList.toggle('active'); render();
     });
-    document.getElementById('rowsPerView').addEventListener('change', function(){
-      PAGE_SIZE = getRowsPerView() * 3;
-      visibleCount = PAGE_SIZE;
-      render();
-    });
 
     const qParam = params.get('q');
     if(qParam) document.getElementById('searchInput').value = qParam;
@@ -541,11 +525,8 @@ function buildNav(){
   nav.innerHTML = `<div class="nav-item"><a href="category.html"${todoActive}>Todo</a></div>` + buildLevel(allProducts, 1, {});
 }
 
-function getRowsPerView(){
-  const el = document.getElementById('rowsPerView');
-  return el ? parseInt(el.value) : 6;
-}
-let PAGE_SIZE = getRowsPerView() * 3;
+/* 6 filas x 3 columnas por carga (al presionar "Cargar mas" se suman 6 filas mas) */
+const PAGE_SIZE = 18;
 let currentList = [];
 let visibleCount = PAGE_SIZE;
 
@@ -588,9 +569,15 @@ function render(){
     sortVal === 'alpha' ? (a,b)=>getPRODUCTO(a).localeCompare(getPRODUCTO(b)) :
     (a,b)=>b._rowIndex - a._rowIndex;
 
+  function stockTier(p){
+    if(getStockNum(p) > 0) return 0;   // stock real: primero
+    if(isPreventaProduct(p)) return 1; // preventa: despues
+    return 2;                          // agotado: al final
+  }
+
   list.sort((a,b)=>{
-    const outA = (getStockNum(a) > 0 || isPreventaProduct(a)) ? 0 : 1;
-    const outB = (getStockNum(b) > 0 || isPreventaProduct(b)) ? 0 : 1;
+    const outA = stockTier(a);
+    const outB = stockTier(b);
     if(outA !== outB) return outA - outB;
     return cmp(a,b);
   });
@@ -704,7 +691,7 @@ function openImgModal(src, alt){
   pic.src = src;
   pic.alt = alt || '';
   pic.classList.remove('zoomed');
-  pic.style.transformOrigin = 'center center';
+  pic.style.transform = '';
   document.getElementById('imgModal').classList.add('open');
 }
 function closeImgModal(){
@@ -718,20 +705,57 @@ document.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape') closeImgModal();
 });
 
-/* ===== ZOOM AL HACER CLIC SOBRE LA FOTO DENTRO DEL VISOR ===== */
+/* ===== ZOOM MODERADO + ARRASTRAR PARA MOVER LA FOTO DENTRO DEL VISOR ===== */
 const imgModalPic = document.getElementById('imgModalPic');
+const ZOOM_SCALE = 1.6;
+let zoomPan = { x: 0, y: 0 };
+let dragging = false;
+let dragStart = { x: 0, y: 0 };
+
+function applyPan(){
+  imgModalPic.style.transform = `scale(${ZOOM_SCALE}) translate(${zoomPan.x}px, ${zoomPan.y}px)`;
+}
+
 imgModalPic.addEventListener('click', (e)=>{
   e.stopPropagation();
+  if(dragging) return; // no alternar si fue un arrastre, no un clic
   const zoomed = imgModalPic.classList.toggle('zoomed');
   if(zoomed){
-    const rect = imgModalPic.getBoundingClientRect();
-    const originX = ((e.clientX - rect.left) / rect.width) * 100;
-    const originY = ((e.clientY - rect.top) / rect.height) * 100;
-    imgModalPic.style.transformOrigin = `${originX}% ${originY}%`;
+    zoomPan = { x: 0, y: 0 };
+    applyPan();
   } else {
-    imgModalPic.style.transformOrigin = 'center center';
+    imgModalPic.style.transform = '';
   }
 });
+
+function panStart(x, y){
+  if(!imgModalPic.classList.contains('zoomed')) return;
+  dragging = false;
+  dragStart = { x: x - zoomPan.x, y: y - zoomPan.y };
+  imgModalPic.dataset.panning = '1';
+}
+function panMove(x, y){
+  if(imgModalPic.dataset.panning !== '1') return;
+  dragging = true;
+  zoomPan = { x: x - dragStart.x, y: y - dragStart.y };
+  applyPan();
+}
+function panEnd(){
+  imgModalPic.dataset.panning = '0';
+  setTimeout(()=>{ dragging = false; }, 0);
+}
+
+imgModalPic.addEventListener('mousedown', (e)=>{ panStart(e.clientX, e.clientY); });
+document.addEventListener('mousemove', (e)=>{ panMove(e.clientX, e.clientY); });
+document.addEventListener('mouseup', panEnd);
+
+imgModalPic.addEventListener('touchstart', (e)=>{
+  const t = e.touches[0]; panStart(t.clientX, t.clientY);
+}, { passive: true });
+imgModalPic.addEventListener('touchmove', (e)=>{
+  const t = e.touches[0]; panMove(t.clientX, t.clientY);
+}, { passive: true });
+imgModalPic.addEventListener('touchend', panEnd);
 
 /* ===== BOTON SUBIR ARRIBA ===== */
 const backToTop = document.getElementById('backToTop');

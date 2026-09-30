@@ -270,6 +270,20 @@ function imgFallback(el, name, fallback){
 
 /* Imagen dentro de una carpeta (puede tener subcarpetas, ej. "CATEGORIA/CARRETE" o "FIGURAS").
    Usa el nombre y la carpeta EXACTOS tal como estan escritos, sin adivinar variantes. */
+function resolveImageSrc(candidates){
+  return new Promise((resolve)=>{
+    let i = 0;
+    function tryNext(){
+      if(i >= candidates.length){ resolve(candidates[0] || ''); return; }
+      const testImg = new Image();
+      testImg.onload = ()=> resolve(candidates[i]);
+      testImg.onerror = ()=> { i++; tryNext(); };
+      testImg.src = candidates[i];
+    }
+    tryNext();
+  });
+}
+
 function imgCandidatesIn(folder, name){
   const f = (folder || '').trim();
   const trimmed = (name || '').trim();
@@ -373,6 +387,8 @@ fetch(CSV_URL)
     const products=toObjects(rows).filter(p=>getPRODUCTO(p));
 
     /* ===== Tarjeta compartida para los carruseles (Recien llegados / Preventas) ===== */
+    const recentImgCache = {};
+
     function recentCardHTML(p){
       const isPreventa = isPreventaProduct(p);
       const isForcedOut = getEstado(p) === 'agotado';
@@ -382,6 +398,7 @@ fetch(CSV_URL)
       const cat1 = resolveFolder(getCatLevel(p,1));
       const cands = imgCandidatesIn(cat1, getID(p));
       const candsData = JSON.stringify(cands).replace(/"/g, '&quot;');
+      const firstSrc = recentImgCache[getID(p)] || cands[0];
 
       const badgeClass = isPreventa ? 'preventa' : (inStock ? 'in' : 'out');
       const badgeText = isPreventa ? 'Preventa' : (inStock ? 'En stock' : 'Agotado');
@@ -398,7 +415,7 @@ fetch(CSV_URL)
       return `<div class="recent-card">
         <div class="recent-img">
           <span class="stock-badge ${badgeClass}">${badgeText}</span>
-          <img src="${cands[0]}" data-cands="${candsData}" alt="${getPRODUCTO(p)}" loading="lazy" onerror="imgFallbackList(this)">
+          <img src="${firstSrc}" data-cands="${candsData}" alt="${getPRODUCTO(p)}" loading="lazy" onerror="imgFallbackList(this)">
         </div>
         <div class="recent-name">${getPRODUCTO(p)}</div>
         ${inStock ? `<div class="price"><span class="yn">S/</span>${price.toFixed(2)}</div>` : ''}
@@ -431,11 +448,29 @@ fetch(CSV_URL)
       let idx = 0;
       const vis = Math.min(opts.visibleCount, items.length);
 
+      /* Precarga en segundo plano: resuelve la foto real de cada producto una sola vez,
+         asi los siguientes avances del carrusel no tienen que reintentar rutas */
+      items.forEach(p=>{
+        const id = getID(p);
+        if(recentImgCache[id]) return;
+        const cat1 = resolveFolder(getCatLevel(p,1));
+        resolveImageSrc(imgCandidatesIn(cat1, id)).then(src => { recentImgCache[id] = src; });
+      });
+
       function draw(){
         const slice = [];
         for(let i=0;i<vis;i++) slice.push(items[(idx+i) % items.length]);
-        track.innerHTML = slice.map(recentCardHTML).join('');
-        wireRecentButtons(track);
+        track.style.opacity = 0;
+        track.style.transform = 'translateX(14px) scale(0.97)';
+        setTimeout(()=>{
+          track.innerHTML = slice.map(recentCardHTML).join('');
+          wireRecentButtons(track);
+          track.style.transform = 'translateX(-14px) scale(0.97)';
+          requestAnimationFrame(()=>{
+            track.style.opacity = 1;
+            track.style.transform = 'translateX(0) scale(1)';
+          });
+        }, 400);
       }
       function next(){ idx = (idx+1) % items.length; draw(); }
       function prev(){ idx = (idx-1+items.length) % items.length; draw(); }
@@ -447,7 +482,7 @@ fetch(CSV_URL)
 
       draw();
 
-      if(items.length > vis){
+      if(items.length > 1){
         let timer = setInterval(next, opts.autoMs || 4000);
         track.addEventListener('mouseenter', ()=> clearInterval(timer));
       } else if(prevBtn && nextBtn){
@@ -460,14 +495,14 @@ fetch(CSV_URL)
     makeInfiniteCarousel({
       trackId:'recentGrid', prevId:'recentPrev', nextId:'recentNext', sectionId:'recientes',
       items: products.filter(p=> !isPreventaProduct(p) && getStockNum(p) > 0).slice(-20).reverse(),
-      visibleCount: 3, autoMs: 4000
+      visibleCount: 5, autoMs: 3000
     });
 
     /* ===== Preventas: solo lo que esta en preventa ===== */
     makeInfiniteCarousel({
       trackId:'preventaGrid', prevId:'preventaPrev', nextId:'preventaNext', sectionId:'preventaSection',
-      items: products.filter(p=> isPreventaProduct(p)),
-      visibleCount: 3, autoMs: 4600
+      items: products.filter(p=> isPreventaProduct(p)).reverse(),
+      visibleCount: 5, autoMs: 3000
     });
 
     const cats=[...new Set(products.map(getCategory).filter(Boolean))];
@@ -556,8 +591,14 @@ const heroImages = ['FOTO4SEG0', 'FOTO4SEG1', 'FOTO4SEG2', 'FOTO4SEG3'];
 const HERO_FOLDER = 'CATEGORIA/CARRETE';
 const heroSlots = [document.getElementById('heroSlide0'), document.getElementById('heroSlide1'), document.getElementById('heroSlide2')]
   .filter(Boolean);
+const heroResolvedCache = {};
 
 function setHeroSlide(imgEl, name){
+  if(heroResolvedCache[name]){
+    imgEl.onerror = null;
+    imgEl.src = heroResolvedCache[name];
+    return;
+  }
   delete imgEl.dataset.candidatesIn;
   delete imgEl.dataset.tryIdxIn;
   imgEl.onerror = function(){ imgFallbackIn(imgEl, HERO_FOLDER, name); };
@@ -573,15 +614,22 @@ if(heroSlots.length){
   }
   drawHeroSlots();
 
+  /* Precarga en segundo plano: una vez lista, las siguientes rotaciones son instantaneas */
+  Promise.all(heroImages.map(name =>
+    resolveImageSrc(imgCandidatesIn(HERO_FOLDER, name)).then(src => { heroResolvedCache[name] = src; })
+  )).catch(()=>{});
+
   if(heroImages.length > heroSlots.length){
     setInterval(()=>{
       heroIdx = (heroIdx + 1) % heroImages.length;
-      heroSlots.forEach(el => el.style.opacity = 0);
+      heroSlots.forEach(el => { el.style.opacity = 0; el.style.transform = 'scale(0.94) translateY(6px)'; });
       setTimeout(()=>{
         drawHeroSlots();
-        heroSlots.forEach(el => el.style.opacity = 1);
-      }, 300);
-    }, 4000);
+        requestAnimationFrame(()=>{
+          heroSlots.forEach(el => { el.style.opacity = 1; el.style.transform = 'scale(1) translateY(0)'; });
+        });
+      }, 400);
+    }, 6000);
   }
 }
 
