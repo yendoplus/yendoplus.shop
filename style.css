@@ -749,9 +749,12 @@ nav.main a.active-link{border-color:var(--red);color:var(--red-dark);}
 /* ===== CARRUSEL INFINITO (Recien llegados / Preventas) - 5 tarjetas, sin scroll, por indice ===== */
 .carousel-wrap{display:flex;align-items:center;gap:6px;}
 .carousel-track{
-  display:grid;grid-template-columns:repeat(5, 1fr);gap:14px;flex:1;
-  transition:opacity .4s ease-in-out, transform .4s ease-in-out;
+  flex:1;overflow:hidden;
 }
+.carousel-strip{
+  display:flex;gap:14px;
+}
+.carousel-strip .recent-card{flex:0 0 calc((100% - 14px * (var(--vis, 5) - 1)) / var(--vis, 5));min-width:0;}
 .recent-card{display:flex;flex-direction:column;gap:5px;}
 .recent-img{
   position:relative;aspect-ratio:1/1;background:#d8d8d8;overflow:hidden;border-radius:5px;

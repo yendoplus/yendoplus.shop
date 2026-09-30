@@ -457,34 +457,70 @@ fetch(CSV_URL)
         resolveImageSrc(imgCandidatesIn(cat1, id)).then(src => { recentImgCache[id] = src; });
       });
 
-      function draw(){
+      /* El track pasa a ser la "ventana" (overflow oculto); adentro va la tira que se desliza */
+      track.innerHTML = '<div class="carousel-strip"></div>';
+      const strip = track.firstElementChild;
+      strip.style.setProperty('--vis', vis);
+
+      function renderWindow(startIdx, count){
         const slice = [];
-        for(let i=0;i<vis;i++) slice.push(items[(idx+i) % items.length]);
-        track.style.opacity = 0;
-        track.style.transform = 'translateX(14px) scale(0.97)';
-        setTimeout(()=>{
-          track.innerHTML = slice.map(recentCardHTML).join('');
-          wireRecentButtons(track);
-          track.style.transform = 'translateX(-14px) scale(0.97)';
-          requestAnimationFrame(()=>{
-            track.style.opacity = 1;
-            track.style.transform = 'translateX(0) scale(1)';
-          });
-        }, 400);
+        for(let i=0;i<count;i++) slice.push(items[(startIdx+i) % items.length]);
+        strip.innerHTML = slice.map(recentCardHTML).join('');
+        wireRecentButtons(strip);
       }
-      function next(){ idx = (idx+1) % items.length; draw(); }
-      function prev(){ idx = (idx-1+items.length) % items.length; draw(); }
+
+      /* Coloca la tira de golpe en su posicion final, sin animar (usado por las flechas y al terminar de deslizar) */
+      function snapTo(newIdx){
+        idx = newIdx;
+        strip.style.transition = 'none';
+        strip.style.transform = 'translateX(0)';
+        renderWindow(idx, vis);
+        void strip.offsetWidth; // forzar reflow para que el proximo cambio si anime
+      }
+
+      /* Desliza suavemente una tarjeta hacia adelante (usado por el avance automatico) */
+      function slideNext(){
+        if(items.length <= 1) return;
+        const cardW = track.clientWidth / vis;
+        renderWindow(idx, vis + 1); // muestra una tarjeta extra "asomando" a la derecha
+        strip.style.transition = 'none';
+        strip.style.transform = 'translateX(0)';
+        void strip.offsetWidth;
+        strip.style.transition = 'transform .6s cubic-bezier(.4,0,.2,1)';
+        strip.style.transform = `translateX(-${cardW}px)`;
+        strip.addEventListener('transitionend', function handler(){
+          strip.removeEventListener('transitionend', handler);
+          snapTo((idx + 1) % items.length);
+        }, { once:true });
+      }
+
+      snapTo(0);
+
+      let autoTimer = null;
+      function scheduleAuto(delay){
+        clearTimeout(autoTimer);
+        if(items.length <= 1) return;
+        autoTimer = setTimeout(()=>{
+          slideNext();
+          scheduleAuto(opts.autoMs || 4000);
+        }, delay);
+      }
 
       const prevBtn = document.getElementById(opts.prevId);
       const nextBtn = document.getElementById(opts.nextId);
-      if(prevBtn) prevBtn.addEventListener('click', prev);
-      if(nextBtn) nextBtn.addEventListener('click', next);
+      const ARROW_COOLDOWN = 8000;
 
-      draw();
+      if(nextBtn) nextBtn.addEventListener('click', ()=>{
+        snapTo((idx + 1) % items.length); // instantaneo, sin animacion
+        scheduleAuto(ARROW_COOLDOWN);
+      });
+      if(prevBtn) prevBtn.addEventListener('click', ()=>{
+        snapTo((idx - 1 + items.length) % items.length); // instantaneo, sin animacion
+        scheduleAuto(ARROW_COOLDOWN);
+      });
 
       if(items.length > 1){
-        let timer = setInterval(next, opts.autoMs || 4000);
-        track.addEventListener('mouseenter', ()=> clearInterval(timer));
+        scheduleAuto(opts.autoMs || 4000);
       } else if(prevBtn && nextBtn){
         prevBtn.style.display = 'none';
         nextBtn.style.display = 'none';
