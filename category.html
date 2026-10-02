@@ -16,7 +16,6 @@
   <div class="logo-wrap">
     <a href="index.html"><img src="A/logo.jpg" alt="Yendo Plus" onerror="imgFallback(this,'logo')"></a>
   </div>
-  <nav class="main" id="navCats"></nav>
   <div class="socials-top">
     <button id="themeToggle" class="theme-switch" aria-label="Cambiar tema" aria-pressed="false">
       <span class="theme-switch-track">
@@ -41,6 +40,10 @@
     </div>
   </div>
 </header>
+
+<nav class="cat-nav-bar main">
+  <div class="cat-nav-scroll" id="navCats"></div>
+</nav>
 
 <div class="search-bar-wrap">
   <div class="search-bar">
@@ -227,6 +230,21 @@ function imgFallback(el, name, fallback){
 function spacedVariant(name){
   return name.replace(/([^\s])\(/g, '$1 (');
 }
+function resolveImageSrc(candidates){
+  return new Promise((resolve)=>{
+    let i = 0;
+    function tryNext(){
+      if(i >= candidates.length){ resolve(candidates[0] || ''); return; }
+      const testImg = new Image();
+      testImg.onload = ()=> resolve(candidates[i]);
+      testImg.onerror = ()=> { i++; tryNext(); };
+      testImg.src = candidates[i];
+    }
+    tryNext();
+  });
+}
+const prodImgCache = {};
+
 function imgCandidatesIn(folder, name){
   const f = (folder || '').trim();
   const trimmed = (name || '').trim();
@@ -365,11 +383,12 @@ function productCardHTML(p){
 
   const prodCands = productImgCandidates(p);
   const prodData = JSON.stringify(prodCands).replace(/"/g, '&quot;');
+  const firstSrc = prodImgCache[getID(p)] || prodCands[0];
 
   return `<div class="prod-card">
     <div class="prod-img ${inStock?'':'out-of-stock'}">
       <span class="stock-badge ${isPreventa?'preventa':(inStock?'in':'out')}">${isPreventa?'Preventa':(inStock?'En stock':'Agotado')}</span>
-      <img src="${prodCands[0]}" data-cands="${prodData}" alt="${getPRODUCTO(p)}" loading="lazy" class="zoomable" onerror="imgFallbackList(this)">
+      <img src="${firstSrc}" data-cands="${prodData}" alt="${getPRODUCTO(p)}" loading="lazy" class="zoomable" onerror="imgFallbackList(this)">
     </div>
     <div class="prod-body">
       <span class="prod-cat">${allCats}</span>
@@ -607,6 +626,14 @@ function renderProducts(){
 
   container.innerHTML = `<div class="prod-grid">${slice.map(productCardHTML).join('')}</div>${moreBtn}`;
 
+  /* Precarga en segundo plano: resuelve la foto real de cada producto visible una sola vez,
+     asi la proxima vez que se redibuje (orden, filtro, "cargar mas") ya esta lista al instante */
+  slice.forEach(p=>{
+    const id = getID(p);
+    if(prodImgCache[id]) return;
+    resolveImageSrc(productImgCandidates(p)).then(src => { prodImgCache[id] = src; });
+  });
+
   container.querySelectorAll('.add-cart-btn').forEach(btn=>{
     if(btn.disabled) return;
     btn.addEventListener('click', function(){
@@ -705,57 +732,28 @@ document.addEventListener('keydown', (e)=>{
   if(e.key === 'Escape') closeImgModal();
 });
 
-/* ===== ZOOM MODERADO + ARRASTRAR PARA MOVER LA FOTO DENTRO DEL VISOR ===== */
+/* ===== ZOOM SIMPLE: clic para acercar 40% en el punto exacto, otro clic para quitar ===== */
 const imgModalPic = document.getElementById('imgModalPic');
-const ZOOM_SCALE = 1.6;
-let zoomPan = { x: 0, y: 0 };
-let dragging = false;
-let dragStart = { x: 0, y: 0 };
+const CLICK_ZOOM = 1.4;
 
-function applyPan(){
-  imgModalPic.style.transform = `scale(${ZOOM_SCALE}) translate(${zoomPan.x}px, ${zoomPan.y}px)`;
+function toggleZoomAt(clientX, clientY){
+  const zoomed = imgModalPic.classList.toggle('zoomed');
+  if(zoomed){
+    const rect = imgModalPic.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
+    imgModalPic.style.transformOrigin = `${x}% ${y}%`;
+    imgModalPic.style.transform = `scale(${CLICK_ZOOM})`;
+  } else {
+    imgModalPic.style.transform = 'scale(1)';
+    imgModalPic.style.transformOrigin = 'center center';
+  }
 }
 
 imgModalPic.addEventListener('click', (e)=>{
   e.stopPropagation();
-  if(dragging) return; // no alternar si fue un arrastre, no un clic
-  const zoomed = imgModalPic.classList.toggle('zoomed');
-  if(zoomed){
-    zoomPan = { x: 0, y: 0 };
-    applyPan();
-  } else {
-    imgModalPic.style.transform = '';
-  }
+  toggleZoomAt(e.clientX, e.clientY);
 });
-
-function panStart(x, y){
-  if(!imgModalPic.classList.contains('zoomed')) return;
-  dragging = false;
-  dragStart = { x: x - zoomPan.x, y: y - zoomPan.y };
-  imgModalPic.dataset.panning = '1';
-}
-function panMove(x, y){
-  if(imgModalPic.dataset.panning !== '1') return;
-  dragging = true;
-  zoomPan = { x: x - dragStart.x, y: y - dragStart.y };
-  applyPan();
-}
-function panEnd(){
-  imgModalPic.dataset.panning = '0';
-  setTimeout(()=>{ dragging = false; }, 0);
-}
-
-imgModalPic.addEventListener('mousedown', (e)=>{ panStart(e.clientX, e.clientY); });
-document.addEventListener('mousemove', (e)=>{ panMove(e.clientX, e.clientY); });
-document.addEventListener('mouseup', panEnd);
-
-imgModalPic.addEventListener('touchstart', (e)=>{
-  const t = e.touches[0]; panStart(t.clientX, t.clientY);
-}, { passive: true });
-imgModalPic.addEventListener('touchmove', (e)=>{
-  const t = e.touches[0]; panMove(t.clientX, t.clientY);
-}, { passive: true });
-imgModalPic.addEventListener('touchend', panEnd);
 
 /* ===== BOTON SUBIR ARRIBA ===== */
 const backToTop = document.getElementById('backToTop');

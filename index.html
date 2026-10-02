@@ -16,7 +16,6 @@
   <div class="logo-wrap">
     <a href="index.html"><img src="A/logo.jpg" alt="Yendo Plus" onerror="imgFallback(this,'logo')"></a>
   </div>
-  <nav class="main" id="navCats"></nav>
   <div class="socials-top">
     <a href="https://www.facebook.com/Yendoplus" target="_blank" class="social-icon" aria-label="Facebook"><img src="A/facebook.jpg" alt="Facebook" onerror="imgFallback(this,'facebook')"></a>
     <a href="https://www.instagram.com/yendo_plus/" target="_blank" class="social-icon" aria-label="Instagram"><img src="A/instagram.jpg" alt="Instagram" onerror="imgFallback(this,'instagram')"></a>
@@ -45,6 +44,10 @@
     </div>
   </div>
 </header>
+
+<nav class="cat-nav-bar main">
+  <div class="cat-nav-scroll" id="navCats"></div>
+</nav>
 
 <div class="search-bar-wrap">
   <div class="search-bar">
@@ -138,6 +141,11 @@
     <span>© 2026 Yendo Plus. Todos los derechos reservados.</span>
   </div>
 </footer>
+
+<div class="img-modal" id="imgModal">
+  <button class="img-modal-close" id="imgModalClose" aria-label="Cerrar">✕</button>
+  <img id="imgModalPic" src="" alt="">
+</div>
 
 <button id="backToTop" class="back-to-top" aria-label="Subir arriba">↑</button>
 
@@ -415,7 +423,7 @@ fetch(CSV_URL)
       return `<div class="recent-card">
         <div class="recent-img">
           <span class="stock-badge ${badgeClass}">${badgeText}</span>
-          <img src="${firstSrc}" data-cands="${candsData}" alt="${getPRODUCTO(p)}" loading="lazy" onerror="imgFallbackList(this)">
+          <img src="${firstSrc}" data-cands="${candsData}" alt="${getPRODUCTO(p)}" loading="lazy" class="zoomable" onerror="imgFallbackList(this)">
         </div>
         <div class="recent-name">${getPRODUCTO(p)}</div>
         ${inStock ? `<div class="price"><span class="yn">S/</span>${price.toFixed(2)}</div>` : ''}
@@ -435,6 +443,9 @@ fetch(CSV_URL)
           if(typeof openMiniCart === 'function') openMiniCart(3000);
         });
       });
+      container.querySelectorAll('.zoomable').forEach(img=>{
+        img.addEventListener('click', ()=> openImgModal(img.src, img.alt));
+      });
     }
 
     /* Carrusel infinito por indice: 1-2-3 -> 2-3-4 -> 3-4-1 ... sin fin, con flechas + automatico */
@@ -446,7 +457,8 @@ fetch(CSV_URL)
       if(!items.length){ if(section) section.style.display = 'none'; return; }
 
       let idx = 0;
-      const vis = Math.min(opts.visibleCount, items.length);
+      const screenMax = window.innerWidth <= 480 ? 2 : window.innerWidth <= 900 ? 3 : opts.visibleCount;
+      const vis = Math.min(opts.visibleCount, items.length, screenMax);
 
       /* Precarga en segundo plano: resuelve la foto real de cada producto una sola vez,
          asi los siguientes avances del carrusel no tienen que reintentar rutas */
@@ -708,6 +720,48 @@ function setupSearchBar(products){
   document.getElementById('topSearchBtn').addEventListener('click', goSearch);
   input.addEventListener('keydown', (e)=>{ if(e.key==='Enter') goSearch(); });
 }
+
+function openImgModal(src, alt){
+  const pic = document.getElementById('imgModalPic');
+  pic.src = src;
+  pic.alt = alt || '';
+  pic.classList.remove('zoomed');
+  pic.style.transform = '';
+  document.getElementById('imgModal').classList.add('open');
+}
+function closeImgModal(){
+  document.getElementById('imgModal').classList.remove('open');
+}
+document.getElementById('imgModalClose').addEventListener('click', closeImgModal);
+document.getElementById('imgModal').addEventListener('click', (e)=>{
+  if(e.target.id === 'imgModal') closeImgModal();
+});
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape') closeImgModal();
+});
+
+/* ===== ZOOM SIMPLE: clic para acercar 40% en el punto exacto, otro clic para quitar ===== */
+const imgModalPic = document.getElementById('imgModalPic');
+const CLICK_ZOOM = 1.4;
+
+function toggleZoomAt(clientX, clientY){
+  const zoomed = imgModalPic.classList.toggle('zoomed');
+  if(zoomed){
+    const rect = imgModalPic.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((clientY - rect.top) / rect.height) * 100));
+    imgModalPic.style.transformOrigin = `${x}% ${y}%`;
+    imgModalPic.style.transform = `scale(${CLICK_ZOOM})`;
+  } else {
+    imgModalPic.style.transform = 'scale(1)';
+    imgModalPic.style.transformOrigin = 'center center';
+  }
+}
+
+imgModalPic.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  toggleZoomAt(e.clientX, e.clientY);
+});
 
 /* ===== BOTON SUBIR ARRIBA ===== */
 const backToTop = document.getElementById('backToTop');
