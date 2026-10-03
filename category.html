@@ -75,6 +75,7 @@
         <div class="toggle-box-row">
           <button type="button" id="onlyStockToggle" class="toggle-box active">Stock</button>
           <button type="button" id="showPreventaToggle" class="toggle-box active">Preventa</button>
+          <button type="button" id="showAgotadosToggle" class="toggle-box">Agotados</button>
         </div>
 
         <div id="filterLevels" class="cat-filter-stack"></div>
@@ -340,7 +341,7 @@ function productCardHTML(p){
   const isForcedOut = estado === 'agotado';
   const rawStock = isForcedOut ? 0 : getStockNum(p);
   const preventaUnits = getPreventaUnits(p);
-  const isPreventa = !isForcedOut && (estado === 'preventa' || (rawStock === 0 && preventaUnits > 0));
+  const isPreventa = !isForcedOut && (estado === 'preventa' || (rawStock <= 0 && preventaUnits > 0));
 
   const stockNum = rawStock;
   const inStock = stockNum > 0 || isPreventa;
@@ -431,6 +432,9 @@ fetch(CSV_URL)
       this.classList.toggle('active'); render();
     });
     document.getElementById('showPreventaToggle').addEventListener('click', function(){
+      this.classList.toggle('active'); render();
+    });
+    document.getElementById('showAgotadosToggle').addEventListener('click', function(){
       this.classList.toggle('active'); render();
     });
 
@@ -544,8 +548,8 @@ function buildNav(){
   nav.innerHTML = `<div class="nav-item"><a href="category.html"${todoActive}>Todo</a></div>` + buildLevel(allProducts, 1, {});
 }
 
-/* 6 filas x 3 columnas por carga (al presionar "Cargar mas" se suman 6 filas mas) */
-const PAGE_SIZE = 18;
+/* 6 filas x 4 columnas por carga (al presionar "Cargar mas" se suman 6 filas mas) */
+const PAGE_SIZE = 24;
 let currentList = [];
 let visibleCount = PAGE_SIZE;
 
@@ -553,7 +557,7 @@ function isPreventaProduct(p){
   const estado = getEstado(p);
   if(estado === 'agotado') return false;
   const rawStock = getStockNum(p);
-  return estado === 'preventa' || (rawStock === 0 && getPreventaUnits(p) > 0);
+  return estado === 'preventa' || (rawStock <= 0 && getPreventaUnits(p) > 0);
 }
 
 function render(){
@@ -563,13 +567,16 @@ function render(){
     ? allProducts.slice()
     : allProducts.filter(p => matchesSelection(p, selectedLevels.length));
 
-  if(document.getElementById('onlyStockToggle').classList.contains('active')){
-    list = list.filter(p => getStockNum(p) > 0 || isPreventaProduct(p));
-  }
+  const showStock = document.getElementById('onlyStockToggle').classList.contains('active');
+  const showPreventa = document.getElementById('showPreventaToggle').classList.contains('active');
+  const showAgotados = document.getElementById('showAgotadosToggle').classList.contains('active');
 
-  if(!document.getElementById('showPreventaToggle').classList.contains('active')){
-    list = list.filter(p => !isPreventaProduct(p));
-  }
+  list = list.filter(p => {
+    const tier = stockTier(p); // 0=stock real, 1=preventa, 2=agotado
+    if(tier === 0) return showStock;
+    if(tier === 1) return showPreventa;
+    return showAgotados;
+  });
 
   if(term){
     list = list.filter(p => {
@@ -688,10 +695,10 @@ function setupSearchBar(products){
   function renderSuggest(term){
     const list = matches(term);
     if(!list.length){ box.innerHTML=''; box.classList.remove('open'); return; }
-    box.innerHTML = list.map(p=>`<button type="button" class="suggest-row" data-name="${getPRODUCTO(p).replace(/"/g,'&quot;')}">
+    box.innerHTML = list.map(p=>`<a href="#" class="suggest-row" data-name="${getPRODUCTO(p).replace(/"/g,'&quot;')}">
         <span class="sg-name">${getPRODUCTO(p)}</span>
         <span class="sg-cat">${displayName(getCatLevel(p,1))}</span>
-      </button>`).join('');
+      </a>`).join('');
     box.classList.add('open');
   }
 
@@ -706,7 +713,7 @@ function setupSearchBar(products){
   input.addEventListener('focus', ()=> { if(input.value.trim()) renderSuggest(input.value); });
   box.addEventListener('click', (e)=>{
     const row = e.target.closest('.suggest-row');
-    if(row) apply(row.dataset.name);
+    if(row){ e.preventDefault(); apply(row.dataset.name); }
   });
   document.addEventListener('click', (e)=>{ if(!e.target.closest('.search-bar')) box.classList.remove('open'); });
   document.getElementById('topSearchBtn').addEventListener('click', ()=> apply(input.value));
@@ -734,7 +741,7 @@ document.addEventListener('keydown', (e)=>{
 
 /* ===== ZOOM SIMPLE: clic para acercar 40% en el punto exacto, otro clic para quitar ===== */
 const imgModalPic = document.getElementById('imgModalPic');
-const CLICK_ZOOM = 1.4;
+const CLICK_ZOOM = 1.65;
 
 function toggleZoomAt(clientX, clientY){
   const zoomed = imgModalPic.classList.toggle('zoomed');

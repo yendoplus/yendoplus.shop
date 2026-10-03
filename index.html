@@ -225,7 +225,7 @@ function isPreventaProduct(p){
   const estado = getEstado(p);
   if(estado === 'agotado') return false;
   const rawStock = getStockNum(p);
-  return estado === 'preventa' || (rawStock === 0 && getPreventaUnits(p) > 0);
+  return estado === 'preventa' || (rawStock <= 0 && getPreventaUnits(p) > 0);
 }
 function getStockNum(p){
   const n = parseInt(getStockRaw(p));
@@ -742,7 +742,7 @@ document.addEventListener('keydown', (e)=>{
 
 /* ===== ZOOM SIMPLE: clic para acercar 40% en el punto exacto, otro clic para quitar ===== */
 const imgModalPic = document.getElementById('imgModalPic');
-const CLICK_ZOOM = 1.4;
+const CLICK_ZOOM = 1.65;
 
 function toggleZoomAt(clientX, clientY){
   const zoomed = imgModalPic.classList.toggle('zoomed');
