@@ -124,6 +124,15 @@
   .section-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:7px;}
   .section-head h2{font-size:clamp(16px,2.5vw,28px);}
   .section-head .sub{color:var(--gray);font-size:14.5px;font-weight:600;}
+  .section-title-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .section-link-btn{
+    font-family:'Work Sans';font-weight:800;font-size:12.5px;text-transform:uppercase;letter-spacing:.4px;
+    color:var(--ink);border:2px solid var(--ink);border-radius:8px;padding:8px 14px;white-space:nowrap;
+    transition:background .15s, color .15s, border-color .15s;
+  }
+  .section-link-btn:hover{background:var(--ink);color:var(--white);}
+  .section-link-preventa{color:#6C3CE0;border-color:#6C3CE0;}
+  .section-link-preventa:hover{background:#6C3CE0;border-color:#6C3CE0;color:#fff;}
 
   /* ===== CATEGORY LIST (estilo HLJ: fila con imagen + texto) ===== */
   .cat-list{display:flex;flex-direction:column;}
@@ -855,16 +864,28 @@
 }
 
 /* ===== CUADROS CLICABLES DE STOCK / PREVENTA (junto al filtro de categoría) ===== */
-.toggle-box-row{display:flex;gap:8px;margin-bottom:14px;}
+.toggle-box-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;}
 .toggle-box{
-  flex:1;padding:16px 8px;border:2px solid var(--gray-line);border-radius:8px;
+  min-width:0;padding:14px 6px;border:2px solid var(--gray-line);border-radius:8px;
   background:var(--white);color:var(--gray);font-family:'Work Sans';font-weight:800;
-  font-size:14px;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;
+  font-size:13px;text-transform:uppercase;letter-spacing:.3px;cursor:pointer;
   transition:background .15s, border-color .15s, color .15s;
 }
 .toggle-box:hover{border-color:var(--ink);color:var(--ink);}
-.toggle-box.active{background:var(--ink);border-color:var(--ink);color:#fff;}
-#showPreventaToggle.active{background:#6C3CE0;border-color:#6C3CE0;}
-#showAgotadosToggle.active{background:var(--gray);border-color:var(--gray);}
+.toggle-box.active{background:var(--ink);border-color:var(--ink);color:var(--white);}
+#showPreventaToggle.active{background:#6C3CE0;border-color:#6C3CE0;color:#fff;}
+#showAgotadosToggle{grid-column:1 / -1;padding:10px 6px;font-size:12px;}
+#showAgotadosToggle.active{background:var(--gray);border-color:var(--gray);color:var(--white);}
+.toggle-box.locked{cursor:default;}
+.toggle-box.shake{animation:toggleShake .35s ease;}
+@keyframes toggleShake{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+.toggle-hint{
+  font-size:12px;font-weight:700;color:var(--red-dark);
+  max-height:0;opacity:0;overflow:hidden;margin-bottom:0;
+  transition:max-height .2s ease, opacity .2s ease, margin-bottom .2s ease;
+}
+.toggle-hint.show{max-height:24px;opacity:1;margin-bottom:8px;}
+.toggle-box-row + .toggle-hint{margin-top:2px;}
+.cat-filter-stack{margin-top:8px;}
 
 

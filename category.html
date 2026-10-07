@@ -73,10 +73,11 @@
         </div>
 
         <div class="toggle-box-row">
-          <button type="button" id="onlyStockToggle" class="toggle-box active">Stock</button>
-          <button type="button" id="showPreventaToggle" class="toggle-box active">Preventa</button>
-          <button type="button" id="showAgotadosToggle" class="toggle-box">Agotados</button>
+          <button type="button" id="onlyStockToggle" class="toggle-box active" aria-pressed="true" title="Productos disponibles ahora">Stock</button>
+          <button type="button" id="showPreventaToggle" class="toggle-box active" aria-pressed="true" title="Productos por llegar, se pueden reservar">Preventa</button>
+          <button type="button" id="showAgotadosToggle" class="toggle-box" aria-pressed="false" title="Productos que ya se agotaron">Agotados</button>
         </div>
+        <div class="toggle-hint" id="toggleHint">Debe quedar al menos un filtro activo</div>
 
         <div id="filterLevels" class="cat-filter-stack"></div>
       </div>
@@ -193,7 +194,44 @@ function displayName(name){
 
 /* Pocas extensiones, sin combinar mayusculas/minusculas del nombre: maximo 6 intentos por imagen,
    para no saturar GitHub Pages con peticiones fallidas (eso disparaba el bloqueo "Rate limit exceeded") */
-const IMG_EXTS = ['jpg','jpeg','png','webp','gif','JPG','JPEG','PNG','WEBP','GIF'];
+const IMG_EXTS = ['jpg','jpeg','webp','png','JPG'];
+/* Solo las extensiones que realmente usas, la mas comun primero (cada extension de mas es un pedido fallido por foto) */
+
+/* ===== MEMORIA DE FOTOS =====
+   Cada vez que el sitio busca una foto y no la encuentra, GitHub lo cuenta para el "Rate limit exceeded".
+   Por eso el sitio ahora RECUERDA (en el navegador de cada visitante) cual direccion de foto funciono
+   y cuales fotos no existen, y no las vuelve a buscar. Lo que no existe se olvida a los 5 minutos,
+   por si acabas de subir esa foto. Agregar ?refrescar=1 a la direccion borra esta memoria. */
+const PHOTO_MEM_KEY = 'yendo_fotos_v1';
+const PHOTO_MISS_MS = 5 * 60 * 1000;
+const BLANK_IMG = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+let photoMem = {};
+let photoServerOk = false;   /* true cuando al menos una foto cargo bien en esta visita (el servidor responde normal) */
+try{
+  if(/[?&]refrescar=1(&|$)/.test(location.search)) localStorage.removeItem(PHOTO_MEM_KEY);
+  photoMem = JSON.parse(localStorage.getItem(PHOTO_MEM_KEY)) || {};
+}catch(e){ photoMem = {}; }
+function photoMemSave(){ try{ localStorage.setItem(PHOTO_MEM_KEY, JSON.stringify(photoMem)); }catch(e){} }
+function photoKey(cands){ return (cands && cands[0]) ? cands[0].replace(/\.[^.\/]+$/, '') : ''; }
+/* Como arrancar una foto: la direccion que ya funciono, nada si se sabe que no existe, o la primera de la lista */
+function photoStart(cands){
+  const key = photoKey(cands);
+  const m = key ? photoMem[key] : null;
+  if(m && m.n && (Date.now() - m.n) < PHOTO_MISS_MS) return { src: BLANK_IMG, cands: [], key: key };
+  if(m && m.u) return { src: m.u, cands: [m.u].concat(cands.filter(c => c !== m.u)), key: key };
+  return { src: cands[0] || BLANK_IMG, cands: cands, key: key };
+}
+function photoOk(el){
+  const u = el.getAttribute('src');
+  if(!u || u.indexOf('data:') === 0) return;
+  photoServerOk = true;
+  const key = el.dataset.pk;
+  if(key && (!photoMem[key] || photoMem[key].u !== u)){ photoMem[key] = { u: u }; photoMemSave(); }
+}
+function photoMiss(el){
+  const key = el.dataset.pk;
+  if(key && photoServerOk){ photoMem[key] = { n: Date.now() }; photoMemSave(); }
+}
 
 /* Codifica cada segmento de una ruta con carpetas sin romper las barras "/" */
 function encodePath(path){
@@ -231,21 +269,6 @@ function imgFallback(el, name, fallback){
 function spacedVariant(name){
   return name.replace(/([^\s])\(/g, '$1 (');
 }
-function resolveImageSrc(candidates){
-  return new Promise((resolve)=>{
-    let i = 0;
-    function tryNext(){
-      if(i >= candidates.length){ resolve(candidates[0] || ''); return; }
-      const testImg = new Image();
-      testImg.onload = ()=> resolve(candidates[i]);
-      testImg.onerror = ()=> { i++; tryNext(); };
-      testImg.src = candidates[i];
-    }
-    tryNext();
-  });
-}
-const prodImgCache = {};
-
 function imgCandidatesIn(folder, name){
   const f = (folder || '').trim();
   const trimmed = (name || '').trim();
@@ -287,6 +310,7 @@ function imgFallbackList(el){
     el.dataset.idx = idx;
     el.src = cands[idx];
   } else {
+    photoMiss(el);
     el.style.display = 'none';
   }
 }
@@ -382,14 +406,13 @@ function productCardHTML(p){
     : '';
   const descHTML = desc ? `<div class="prod-desc">${desc}</div>` : '';
 
-  const prodCands = productImgCandidates(p);
-  const prodData = JSON.stringify(prodCands).replace(/"/g, '&quot;');
-  const firstSrc = prodImgCache[getID(p)] || prodCands[0];
+  const st = photoStart(productImgCandidates(p));
+  const prodData = JSON.stringify(st.cands).replace(/"/g, '&quot;');
 
   return `<div class="prod-card">
     <div class="prod-img ${inStock?'':'out-of-stock'}">
       <span class="stock-badge ${isPreventa?'preventa':(inStock?'in':'out')}">${isPreventa?'Preventa':(inStock?'En stock':'Agotado')}</span>
-      <img src="${firstSrc}" data-cands="${prodData}" alt="${getPRODUCTO(p)}" loading="lazy" class="zoomable" onerror="imgFallbackList(this)">
+      <img src="${st.src}" data-cands="${prodData}" data-pk="${st.key}" alt="${getPRODUCTO(p)}" loading="lazy" class="zoomable" onload="photoOk(this)" onerror="imgFallbackList(this)">
     </div>
     <div class="prod-body">
       <span class="prod-cat">${allCats}</span>
@@ -413,6 +436,14 @@ for(let level=1; level<=MAX_LEVELS; level++){
   if(val) selectedLevels[level-1] = val;
 }
 
+/* Acceso directo desde la portada: ?ver=recientes (solo stock) o ?ver=preventas (solo preventa) */
+const VER_PRESETS = {
+  recientes: { title: 'Recién llegados', on: ['onlyStockToggle'] },
+  preventas: { title: 'Preventas', on: ['showPreventaToggle'] }
+};
+const verPreset = VER_PRESETS[(params.get('ver') || '').toLowerCase()] || null;
+let presetTitle = verPreset ? verPreset.title : '';
+
 let allProducts = [];
 
 fetch(CSV_URL)
@@ -428,15 +459,53 @@ fetch(CSV_URL)
 
     document.getElementById('searchInput').addEventListener('input', render);
     document.getElementById('sortSelect').addEventListener('change', render);
-    document.getElementById('onlyStockToggle').addEventListener('click', function(){
-      this.classList.toggle('active'); render();
+    /* Botones Stock / Preventa / Agotados: cada uno controla su grupo, pero siempre debe quedar al menos uno activo */
+    const TOGGLE_IDS = ['onlyStockToggle', 'showPreventaToggle', 'showAgotadosToggle'];
+    const activeToggleIds = ()=> TOGGLE_IDS.filter(id => document.getElementById(id).classList.contains('active'));
+
+    function refreshToggleState(){
+      const active = activeToggleIds();
+      TOGGLE_IDS.forEach(id=>{
+        const el = document.getElementById(id);
+        const isOn = el.classList.contains('active');
+        el.setAttribute('aria-pressed', isOn ? 'true' : 'false');
+        if(isOn && active.length === 1) el.classList.add('locked'); else el.classList.remove('locked');
+      });
+    }
+
+    let toggleHintTimer = null;
+    function warnLastToggle(btn){
+      btn.classList.remove('shake');
+      void btn.offsetWidth; // reinicia la animacion si se vuelve a intentar
+      btn.classList.add('shake');
+      const hint = document.getElementById('toggleHint');
+      hint.classList.add('show');
+      clearTimeout(toggleHintTimer);
+      toggleHintTimer = setTimeout(()=>{ hint.classList.remove('show'); btn.classList.remove('shake'); }, 2200);
+    }
+
+    TOGGLE_IDS.forEach(id=>{
+      const btn = document.getElementById(id);
+      btn.addEventListener('click', ()=>{
+        const active = activeToggleIds();
+        if(btn.classList.contains('active') && active.length === 1){
+          warnLastToggle(btn); // es el unico activo: no se puede apagar
+          return;
+        }
+        btn.classList.toggle('active');
+        refreshToggleState();
+        presetTitle = '';
+        updateTitle();
+        render();
+      });
     });
-    document.getElementById('showPreventaToggle').addEventListener('click', function(){
-      this.classList.toggle('active'); render();
-    });
-    document.getElementById('showAgotadosToggle').addEventListener('click', function(){
-      this.classList.toggle('active'); render();
-    });
+    if(verPreset){
+      TOGGLE_IDS.forEach(id=>{
+        const el = document.getElementById(id);
+        if(verPreset.on.includes(id)) el.classList.add('active'); else el.classList.remove('active');
+      });
+    }
+    refreshToggleState();
 
     const qParam = params.get('q');
     if(qParam) document.getElementById('searchInput').value = qParam;
@@ -450,7 +519,7 @@ fetch(CSV_URL)
   });
 
 function updateTitle(){
-  document.getElementById('catTitle').textContent = displayName(selectedLevels[0]) || 'Todos los productos';
+  document.getElementById('catTitle').textContent = displayName(selectedLevels[0]) || presetTitle || 'Todos los productos';
 }
 
 function updateNavActiveState(){
@@ -633,28 +702,20 @@ function renderProducts(){
 
   container.innerHTML = `<div class="prod-grid">${slice.map(productCardHTML).join('')}</div>${moreBtn}`;
 
-  /* Precarga en segundo plano: resuelve la foto real de cada producto visible una sola vez,
-     asi la proxima vez que se redibuje (orden, filtro, "cargar mas") ya esta lista al instante */
-  slice.forEach(p=>{
-    const id = getID(p);
-    if(prodImgCache[id]) return;
-    resolveImageSrc(productImgCandidates(p)).then(src => { prodImgCache[id] = src; });
-  });
-
   container.querySelectorAll('.add-cart-btn').forEach(btn=>{
     if(btn.disabled) return;
     btn.addEventListener('click', function(){
       const p = allProducts.find(x => getID(x) === btn.dataset.id);
       if(!p) return;
       const cands = productImgCandidates(p);
-      addToCart({ id:getID(p), name:getPRODUCTO(p), price:getFinalPrice(p), img:cands[0], cands:cands, folder:getCatLevel(p,1), fallbackImg:p.img, stock: getStockNum(p) });
+      addToCart({ id:getID(p), name:getPRODUCTO(p), price:getFinalPrice(p), img:photoStart(cands).src, cands:photoStart(cands).cands, folder:getCatLevel(p,1), fallbackImg:p.img, stock: getStockNum(p) });
       if(typeof openMiniCart === 'function') openMiniCart(3000);
       renderProducts();
     });
   });
 
   container.querySelectorAll('.zoomable').forEach(img=>{
-    img.addEventListener('click', ()=> openImgModal(img.src, img.alt));
+    img.addEventListener('click', ()=>{ if(img.src.indexOf('data:') === 0) return; openImgModal(img.src, img.alt); });
   });
 
   const loadMoreBtn = document.getElementById('loadMoreBtn');

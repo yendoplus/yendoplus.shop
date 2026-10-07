@@ -9,6 +9,23 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<style>
+/* ===== Mapa Feria Grau (hero) ===== */
+.feria-map{position:relative;width:100%;max-width:540px;margin:0 0 24px;border:4px solid var(--ink);border-radius:10px;overflow:hidden;background:#d8d8d8;}
+.feria-map iframe{display:block;width:100%;height:240px;border:0;}
+.feria-map-actions{display:flex;gap:8px;flex-wrap:wrap;padding:8px;background:#141414;}
+.feria-map-actions button,.feria-map-actions a{font:600 14px 'Work Sans',sans-serif;padding:8px 14px;border-radius:6px;cursor:pointer;text-decoration:none;line-height:1.2;}
+.feria-map-actions button{background:#E2231A;color:#fff;border:0;}
+.feria-map-actions button:hover{background:#A9160F;color:#fff;}
+.feria-map-actions a{background:#fff;color:#141414;border:0;}
+.feria-map-actions a:hover{background:#eee;color:#141414;}
+/* Maximizado: ocupa toda la pantalla */
+.feria-map.is-max{position:fixed;inset:0;z-index:10000;max-width:none;margin:0;border:0;border-radius:0;display:flex;flex-direction:column;}
+.feria-map.is-max iframe{flex:1;height:auto;}
+.feria-map.is-max .feria-map-actions{padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));justify-content:flex-end;}
+body.map-open{overflow:hidden;}
+@media (max-width:800px){.feria-map{max-width:none;}.feria-map iframe{height:220px;}}
+</style>
 </head>
 <body>
 
@@ -63,6 +80,13 @@
     <h1 class="hero-small"><span class="yen">YEN</span><span class="d">D</span><span class="o">O</span> POR LAS MEJORES PIEZAS</h1>
     <p>En Yendo Plus estamos siempre en movimiento: figuras de anime, autos a escala y coleccionables importados, con novedades constantes.</p>
     <p class="hero-feria">📍 Todos los sábados en Feria Grau<br>Stand 1K — Av. Miguel Grau 122, La Victoria</p>
+    <div class="feria-map" id="feriaMap">
+      <iframe src="https://maps.google.com/maps?q=Feria%20Grau%2C%20Av.%20Miguel%20Grau%20122%2C%20La%20Victoria%2C%20Lima&z=17&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Ubicación de Feria Grau" allowfullscreen></iframe>
+      <div class="feria-map-actions">
+        <button type="button" id="feriaMapMax">⛶ Maximizar</button>
+        <a href="https://share.google/FpBCJE2tNjoFX7ps6" target="_blank" rel="noopener">Abrir en Google Maps ↗</a>
+      </div>
+    </div>
     <a class="hero-cta" href="#categorias">Ver categorías ↓</a>
   </div>
   <div class="hero-media hero-media-3">
@@ -74,7 +98,10 @@
 
 <section class="section" id="recientes">
   <div class="section-head">
-    <h2>Recién llegados</h2>
+    <div class="section-title-row">
+      <h2>Recién llegados</h2>
+      <a class="section-link-btn" href="category.html?ver=recientes">Ver todos →</a>
+    </div>
     <span class="sub">Lo último que agregamos al catálogo</span>
   </div>
   <div class="carousel-wrap">
@@ -86,7 +113,10 @@
 
 <section class="section" id="preventaSection">
   <div class="section-head">
-    <h2>Preventas</h2>
+    <div class="section-title-row">
+      <h2>Preventas</h2>
+      <a class="section-link-btn section-link-preventa" href="category.html?ver=preventas">Ver todas →</a>
+    </div>
     <span class="sub">Reserva lo que está en camino</span>
   </div>
   <div class="carousel-wrap">
@@ -241,7 +271,44 @@ function parsePrice(raw){
 
 /* Pocas extensiones, sin combinar mayusculas/minusculas del nombre: maximo 6 intentos por imagen,
    para no saturar GitHub Pages con peticiones fallidas (eso disparaba el bloqueo "Rate limit exceeded") */
-const IMG_EXTS = ['jpg','jpeg','png','webp','gif','JPG','JPEG','PNG','WEBP','GIF'];
+const IMG_EXTS = ['jpg','jpeg','webp','png','JPG'];
+/* Solo las extensiones que realmente usas, la mas comun primero (cada extension de mas es un pedido fallido por foto) */
+
+/* ===== MEMORIA DE FOTOS =====
+   Cada vez que el sitio busca una foto y no la encuentra, GitHub lo cuenta para el "Rate limit exceeded".
+   Por eso el sitio ahora RECUERDA (en el navegador de cada visitante) cual direccion de foto funciono
+   y cuales fotos no existen, y no las vuelve a buscar. Lo que no existe se olvida a los 5 minutos,
+   por si acabas de subir esa foto. Agregar ?refrescar=1 a la direccion borra esta memoria. */
+const PHOTO_MEM_KEY = 'yendo_fotos_v1';
+const PHOTO_MISS_MS = 5 * 60 * 1000;
+const BLANK_IMG = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+let photoMem = {};
+let photoServerOk = false;   /* true cuando al menos una foto cargo bien en esta visita (el servidor responde normal) */
+try{
+  if(/[?&]refrescar=1(&|$)/.test(location.search)) localStorage.removeItem(PHOTO_MEM_KEY);
+  photoMem = JSON.parse(localStorage.getItem(PHOTO_MEM_KEY)) || {};
+}catch(e){ photoMem = {}; }
+function photoMemSave(){ try{ localStorage.setItem(PHOTO_MEM_KEY, JSON.stringify(photoMem)); }catch(e){} }
+function photoKey(cands){ return (cands && cands[0]) ? cands[0].replace(/\.[^.\/]+$/, '') : ''; }
+/* Como arrancar una foto: la direccion que ya funciono, nada si se sabe que no existe, o la primera de la lista */
+function photoStart(cands){
+  const key = photoKey(cands);
+  const m = key ? photoMem[key] : null;
+  if(m && m.n && (Date.now() - m.n) < PHOTO_MISS_MS) return { src: BLANK_IMG, cands: [], key: key };
+  if(m && m.u) return { src: m.u, cands: [m.u].concat(cands.filter(c => c !== m.u)), key: key };
+  return { src: cands[0] || BLANK_IMG, cands: cands, key: key };
+}
+function photoOk(el){
+  const u = el.getAttribute('src');
+  if(!u || u.indexOf('data:') === 0) return;
+  photoServerOk = true;
+  const key = el.dataset.pk;
+  if(key && (!photoMem[key] || photoMem[key].u !== u)){ photoMem[key] = { u: u }; photoMemSave(); }
+}
+function photoMiss(el){
+  const key = el.dataset.pk;
+  if(key && photoServerOk){ photoMem[key] = { n: Date.now() }; photoMemSave(); }
+}
 
 /* Codifica cada segmento de una ruta con carpetas (ej. "CATEGORIA/CARRETE") sin romper las barras "/" */
 function encodePath(path){
@@ -295,7 +362,9 @@ function resolveImageSrc(candidates){
 function imgCandidatesIn(folder, name){
   const f = (folder || '').trim();
   const trimmed = (name || '').trim();
-  const names = [...new Set([trimmed, trimmed.toLowerCase()])];
+  /* La variante en minuscula solo hace falta en los cuadros de categoria (ej. tomica.jpg); en productos solo duplicaba las busquedas */
+  const esCuadro = /^categoria(\/|$)/i.test(f);
+  const names = esCuadro ? [...new Set([trimmed, trimmed.toLowerCase()])] : [trimmed];
   const list = [];
   names.forEach(n => IMG_EXTS.forEach(ext => list.push(`A/${encodePath(f)}/${encodeURIComponent(n)}.${ext}`)));
   return list;
@@ -328,9 +397,9 @@ function buildTileCandidates(tileFolder, name, repFolder, repId){
   return list;
 }
 function tileImgAttrs(tileFolder, name, repFolder, repId){
-  const cands = buildTileCandidates(tileFolder, name, repFolder, repId);
-  const data = JSON.stringify(cands).replace(/"/g, '&quot;');
-  return `src="${cands[0]}" data-cands="${data}" onerror="imgFallbackList(this)"`;
+  const st = photoStart(buildTileCandidates(tileFolder, name, repFolder, repId));
+  const data = JSON.stringify(st.cands).replace(/"/g, '&quot;');
+  return `src="${st.src}" data-cands="${data}" data-pk="${st.key}" onload="photoOk(this)" onerror="imgFallbackList(this)"`;
 }
 function imgFallbackList(el){
   if(!el.dataset.idx){
@@ -343,6 +412,7 @@ function imgFallbackList(el){
     el.dataset.idx = idx;
     el.src = cands[idx];
   } else {
+    photoMiss(el);
     el.style.opacity = 0;
   }
 }
@@ -395,7 +465,6 @@ fetch(CSV_URL)
     const products=toObjects(rows).filter(p=>getPRODUCTO(p));
 
     /* ===== Tarjeta compartida para los carruseles (Recien llegados / Preventas) ===== */
-    const recentImgCache = {};
 
     function recentCardHTML(p){
       const isPreventa = isPreventaProduct(p);
@@ -404,9 +473,8 @@ fetch(CSV_URL)
       const inStock = stockNum > 0 || isPreventa;
       const price = parsePrice(getPriceRaw(p));
       const cat1 = resolveFolder(getCatLevel(p,1));
-      const cands = imgCandidatesIn(cat1, getID(p));
-      const candsData = JSON.stringify(cands).replace(/"/g, '&quot;');
-      const firstSrc = recentImgCache[getID(p)] || cands[0];
+      const st = photoStart(imgCandidatesIn(cat1, getID(p)));
+      const candsData = JSON.stringify(st.cands).replace(/"/g, '&quot;');
 
       const badgeClass = isPreventa ? 'preventa' : (inStock ? 'in' : 'out');
       const badgeText = isPreventa ? 'Preventa' : (inStock ? 'En stock' : 'Agotado');
@@ -423,7 +491,7 @@ fetch(CSV_URL)
       return `<div class="recent-card">
         <div class="recent-img">
           <span class="stock-badge ${badgeClass}">${badgeText}</span>
-          <img src="${firstSrc}" data-cands="${candsData}" alt="${getPRODUCTO(p)}" loading="lazy" class="zoomable" onerror="imgFallbackList(this)">
+          <img src="${st.src}" data-cands="${candsData}" data-pk="${st.key}" alt="${getPRODUCTO(p)}" loading="lazy" class="zoomable" onload="photoOk(this)" onerror="imgFallbackList(this)">
         </div>
         <div class="recent-name">${getPRODUCTO(p)}</div>
         ${inStock ? `<div class="price"><span class="yn">S/</span>${price.toFixed(2)}</div>` : ''}
@@ -439,12 +507,12 @@ fetch(CSV_URL)
           if(!p) return;
           const cat1 = resolveFolder(getCatLevel(p,1));
           const cands = imgCandidatesIn(cat1, getID(p));
-          addToCart({ id:getID(p), name:getPRODUCTO(p), price:parsePrice(getPriceRaw(p)), img:cands[0], cands:cands, folder:cat1, fallbackImg:p.img||'', stock:getStockNum(p) });
+          addToCart({ id:getID(p), name:getPRODUCTO(p), price:parsePrice(getPriceRaw(p)), img:photoStart(cands).src, cands:photoStart(cands).cands, folder:cat1, fallbackImg:p.img||'', stock:getStockNum(p) });
           if(typeof openMiniCart === 'function') openMiniCart(3000);
         });
       });
       container.querySelectorAll('.zoomable').forEach(img=>{
-        img.addEventListener('click', ()=> openImgModal(img.src, img.alt));
+        img.addEventListener('click', ()=>{ if(img.src.indexOf('data:') === 0) return; openImgModal(img.src, img.alt); });
       });
     }
 
@@ -459,15 +527,6 @@ fetch(CSV_URL)
       let idx = 0;
       const screenMax = window.innerWidth <= 480 ? 2 : window.innerWidth <= 900 ? 3 : opts.visibleCount;
       const vis = Math.min(opts.visibleCount, items.length, screenMax);
-
-      /* Precarga en segundo plano: resuelve la foto real de cada producto una sola vez,
-         asi los siguientes avances del carrusel no tienen que reintentar rutas */
-      items.forEach(p=>{
-        const id = getID(p);
-        if(recentImgCache[id]) return;
-        const cat1 = resolveFolder(getCatLevel(p,1));
-        resolveImageSrc(imgCandidatesIn(cat1, id)).then(src => { recentImgCache[id] = src; });
-      });
 
       /* El track pasa a ser la "ventana" (overflow oculto); adentro va la tira que se desliza */
       track.innerHTML = '<div class="carousel-strip"></div>';
@@ -775,5 +834,20 @@ if(backToTop){
 }
 </script>
 
+<script>
+/* ===== Mapa Feria Grau: maximizar / cerrar ===== */
+(function(){
+  const box = document.getElementById('feriaMap');
+  const btn = document.getElementById('feriaMapMax');
+  if(!box || !btn) return;
+  function setMax(on){
+    box.classList.toggle('is-max', on);
+    document.body.classList.toggle('map-open', on);
+    btn.textContent = on ? '✕ Cerrar mapa' : '⛶ Maximizar';
+  }
+  btn.addEventListener('click', ()=> setMax(!box.classList.contains('is-max')));
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && box.classList.contains('is-max')) setMax(false); });
+})();
+</script>
 </body>
 </html>
