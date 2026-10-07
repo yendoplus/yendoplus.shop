@@ -16,7 +16,7 @@
   <div class="logo-wrap">
     <a href="index.html"><img src="A/logo.jpg" alt="Yendo Plus" onerror="imgFallback(this,'logo')"></a>
   </div>
-  <nav class="main"><a href="index.html" style="font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.6px;">← Volver al catálogo</a></nav>
+  <nav class="main"><a href="index.html" style="font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.6px;">← <span class="bc-long">Volver al catálogo</span><span class="bc-short">Catálogo</span></a></nav>
   <div class="socials-top">
     <button id="themeToggle" class="theme-switch" aria-label="Cambiar tema" aria-pressed="false">
       <span class="theme-switch-track">
@@ -428,5 +428,49 @@ if(backToTop){
 }
 </script>
 
+<script>
+/* ===== Contador de visualizaciones =====
+   Usa Abacus (abacus.jasoncameron.dev), un servicio gratuito de contadores: el numero se guarda alla.
+   - Suma 1 por VISITA (una vez por sesion del navegador): no suma al refrescar ni al cambiar de pagina.
+   - Para que NO cuente tus propias visitas, abre el sitio una vez con  ?nocontar=1  (con ?contar=1 vuelve a contar).
+   - Si el servicio no responde, el contador se oculta solo y el resto del sitio sigue igual. */
+(function(){
+  var NS = 'yendoplus.shop', KEY = 'visualizaciones', BASE = 'https://abacus.jasoncameron.dev';
+  var SES = 'yendo_visita_contada', NOC = 'yendo_no_contar', LAST = 'yendo_visitas_ultimo';
+  var el = document.getElementById('viewCounter'), num = document.getElementById('viewCount');   // solo existen en la portada
+  var sinContar = false, yaContada = false;
+  try{
+    if(/[?&]nocontar=1(&|$)/.test(location.search)) localStorage.setItem(NOC, '1');
+    if(/[?&]contar=1(&|$)/.test(location.search)) localStorage.removeItem(NOC);
+    sinContar = localStorage.getItem(NOC) === '1';
+    yaContada = sessionStorage.getItem(SES) === '1';
+  }catch(e){}
+  var accion = (sinContar || yaContada) ? 'get' : 'hit';
+  if(!el && accion === 'get') return;                      // en esta pagina no hay nada que mostrar ni que contar
+  function mostrar(n){ if(!el || !num) return; num.textContent = n.toLocaleString('es-PE'); el.classList.add('con-valor'); el.hidden = false; }
+  try{ var ultimo = sessionStorage.getItem(LAST); if(ultimo !== null) mostrar(+ultimo); }catch(e){}
+  var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 6000) : null;
+  fetch(BASE + '/' + accion + '/' + NS + '/' + KEY, ctrl ? { signal: ctrl.signal } : undefined)
+    .then(function(r){
+      if(r.status === 404) return { value: 0 };            // el contador aun no existe (solo pasa al mirar sin contar)
+      if(!r.ok) throw new Error('contador: ' + r.status);
+      return r.json();
+    })
+    .then(function(d){
+      if(timer) clearTimeout(timer);
+      if(typeof d.value !== 'number') throw new Error('contador: respuesta inesperada');
+      try{
+        if(accion === 'hit') sessionStorage.setItem(SES, '1');
+        sessionStorage.setItem(LAST, String(d.value));
+      }catch(e){}
+      mostrar(d.value);
+    })
+    .catch(function(){
+      if(timer) clearTimeout(timer);
+      if(el && !el.classList.contains('con-valor')) el.hidden = true;   // sin servicio: se oculta, nada se rompe
+    });
+})();
+</script>
 </body>
 </html>
