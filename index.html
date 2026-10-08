@@ -25,6 +25,51 @@
 .feria-map.is-max .feria-map-actions{padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));justify-content:flex-end;}
 body.map-open{overflow:hidden;}
 @media (max-width:800px){.feria-map{max-width:none;}.feria-map iframe{height:220px;}}
+
+/* Celular: el mapa queda plegado y se abre con el boton (ahorra una pantalla y no carga el mapa hasta que se pide) */
+.map-toggle{display:none;}
+@media (max-width:640px){
+  .map-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:540px;margin-top:12px;padding:11px 14px;border:2px solid var(--ink);border-radius:8px;background:var(--white);color:var(--ink);font:800 13px 'Work Sans',sans-serif;text-transform:uppercase;letter-spacing:.3px;cursor:pointer;}
+  .map-toggle .mt-caret{transition:transform .2s;}
+  .hero.map-open .map-toggle .mt-caret{transform:rotate(180deg);}
+  .hero-right .feria-map{display:none;}
+  .hero.map-open .hero-right .feria-map{display:block;}
+  .hero.map-open .hero-right .feria-map.is-max{display:flex;}
+  .hero-right .feria-map iframe{height:200px;}
+}
+
+/* El titulo se reparte parejo en sus lineas (evita que quede una palabra sola abajo) */
+.hero-copy h1{text-wrap:balance;}
+
+/* ===== Hero: el mapa va en el centro, al costado de la 1ra foto del carrete ===== */
+.hero-right{
+  --ph:min(338px,13.75vw);            /* tamano de cada foto del carrete */
+  --mw:clamp(220px,17.9vw,440px);     /* ancho del mapa */
+  display:flex;align-items:center;gap:20px;flex:0 1 auto;margin-left:auto;
+}
+.hero-right .hero-photo{width:var(--ph);}
+.hero-right .feria-map{flex:none;width:var(--mw);max-width:none;margin:0;}
+.hero-right .feria-map iframe{height:calc(var(--ph) - 46px);min-height:130px;}
+.hero-right .feria-map-actions{padding:6px;gap:6px;}
+.hero-right .feria-map-actions button,.hero-right .feria-map-actions a{font-size:12.5px;padding:7px 10px;}
+/* Maximizado: vuelve a ocupar toda la pantalla */
+.hero-right .feria-map.is-max{width:auto;}
+.hero-right .feria-map.is-max iframe{height:auto;min-height:0;}
+.hero-right .feria-map.is-max .feria-map-actions button,.hero-right .feria-map.is-max .feria-map-actions a{font-size:14px;padding:8px 14px;}
+
+/* Pantallas medianas: texto arriba y, debajo, el mapa junto al carrete a todo lo ancho */
+@media (max-width:1500px){
+  .hero{row-gap:28px;}
+  .hero-right{--ph:min(338px,19vw);--mw:clamp(200px,24vw,440px);width:100%;margin-left:0;}
+}
+/* Celular: arriba el carrete, luego el texto y al final el mapa (todo dentro del ancho de la pantalla) */
+@media (max-width:800px){
+  .hero-right{display:contents;--ph:min(215px,calc((100vw - 10vw - 12px) / 3));}
+  .hero-copy{width:100%;min-width:0;max-width:100%;}
+  .hero-right .feria-map{width:100%;margin-top:-8px;}
+  .hero-right .feria-map iframe{height:220px;}
+  .hero-right .feria-map.is-max{margin-top:0;}
+}
 </style>
 </head>
 <body>
@@ -80,6 +125,10 @@ body.map-open{overflow:hidden;}
     <h1 class="hero-small"><span class="yen">YEN</span><span class="d">D</span><span class="o">O</span> POR LAS MEJORES PIEZAS</h1>
     <p>En Yendo Plus estamos siempre en movimiento: figuras de anime, autos a escala y coleccionables importados, con novedades constantes.</p>
     <p class="hero-feria">📍 Todos los sábados en Feria Grau<br>Stand 1K — Av. Miguel Grau 122, La Victoria</p>
+    <a class="hero-cta" href="#categorias">Ver categorías ↓</a>
+    <button type="button" class="map-toggle" id="mapToggle" aria-expanded="false"><span>📍 Ver mapa de la feria</span><span class="mt-caret">▾</span></button>
+  </div>
+  <div class="hero-right">
     <div class="feria-map" id="feriaMap">
       <iframe src="https://maps.google.com/maps?q=Feria%20Grau%2C%20Av.%20Miguel%20Grau%20122%2C%20La%20Victoria%2C%20Lima&z=17&output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Ubicación de Feria Grau" allowfullscreen></iframe>
       <div class="feria-map-actions">
@@ -87,12 +136,11 @@ body.map-open{overflow:hidden;}
         <a href="https://share.google/FpBCJE2tNjoFX7ps6" target="_blank" rel="noopener">Abrir en Google Maps ↗</a>
       </div>
     </div>
-    <a class="hero-cta" href="#categorias">Ver categorías ↓</a>
-  </div>
-  <div class="hero-media hero-media-3">
-    <div class="hero-photo"><img id="heroSlide0" alt="Yendo Plus"></div>
-    <div class="hero-photo"><img id="heroSlide1" alt="Yendo Plus"></div>
-    <div class="hero-photo"><img id="heroSlide2" alt="Yendo Plus"></div>
+    <div class="hero-media hero-media-3">
+      <div class="hero-photo"><img id="heroSlide0" alt="Yendo Plus"></div>
+      <div class="hero-photo"><img id="heroSlide1" alt="Yendo Plus"></div>
+      <div class="hero-photo"><img id="heroSlide2" alt="Yendo Plus"></div>
+    </div>
   </div>
 </section>
 
@@ -238,6 +286,19 @@ function getField(p, candidates){
     if(found && p[found]) return p[found];
   }
   return '';
+}
+function getFechaLlegada(p){
+  const k = Object.keys(p).find(k=>/fecha/i.test(k) && /(lleg|ingreso)/i.test(k));
+  const v = k ? p[k] : '';
+  const m = String(v).match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m) return Date.UTC(+m[1], +m[2]-1, +m[3]);
+  const d = String(v).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(d) return Date.UTC(+d[3], +d[2]-1, +d[1]);
+  return 0;
+}
+/* Mas nuevo primero: por fecha de llegada; si empatan o no hay fecha, por fila de la hoja */
+function newestFirst(a,b){
+  return (getFechaLlegada(b) - getFechaLlegada(a)) || ((b._rowIndex||0) - (a._rowIndex||0));
 }
 function getID(p){ return getField(p, ['id','ID']); }
 function getPRODUCTO(p){ return getField(p, ['Producto','PRODUCTO','name']); }
@@ -463,6 +524,7 @@ fetch(CSV_URL)
   .then(text=>{
     const rows=parseCSV(text);
     const products=toObjects(rows).filter(p=>getPRODUCTO(p));
+    products.forEach((p,i)=>{ p._rowIndex=i; });
 
     /* ===== Tarjeta compartida para los carruseles (Recien llegados / Preventas) ===== */
 
@@ -541,7 +603,9 @@ fetch(CSV_URL)
       }
 
       /* Coloca la tira de golpe en su posicion final, sin animar (usado por las flechas y al terminar de deslizar) */
+      let slideTok = 0;   // si cambia, cualquier deslizamiento automatico pendiente se cancela
       function snapTo(newIdx){
+        slideTok++;
         idx = newIdx;
         strip.style.transition = 'none';
         strip.style.transform = 'translateX(0)';
@@ -552,17 +616,20 @@ fetch(CSV_URL)
       /* Desliza suavemente una tarjeta hacia adelante (usado por el avance automatico) */
       function slideNext(){
         if(items.length <= 1) return;
-        const cardW = track.clientWidth / vis;
+        const tok = ++slideTok;
         renderWindow(idx, vis + 1); // muestra una tarjeta extra "asomando" a la derecha
+        /* Distancia exacta de una tarjeta (ancho + separacion), medida en pantalla */
+        const a = strip.children[0], b = strip.children[1];
+        const step = (a && b) ? (b.offsetLeft - a.offsetLeft) : track.clientWidth / vis;
         strip.style.transition = 'none';
         strip.style.transform = 'translateX(0)';
         void strip.offsetWidth;
         strip.style.transition = 'transform .6s cubic-bezier(.4,0,.2,1)';
-        strip.style.transform = `translateX(-${cardW}px)`;
-        strip.addEventListener('transitionend', function handler(){
-          strip.removeEventListener('transitionend', handler);
+        strip.style.transform = `translateX(-${step}px)`;
+        setTimeout(()=>{
+          if(tok !== slideTok) return;   // el usuario movio el carrusel mientras tanto
           snapTo((idx + 1) % items.length);
-        }, { once:true });
+        }, 620);
       }
 
       snapTo(0);
@@ -581,14 +648,27 @@ fetch(CSV_URL)
       const nextBtn = document.getElementById(opts.nextId);
       const ARROW_COOLDOWN = 8000;
 
-      if(nextBtn) nextBtn.addEventListener('click', ()=>{
-        snapTo((idx + 1) % items.length); // instantaneo, sin animacion
-        scheduleAuto(ARROW_COOLDOWN);
-      });
-      if(prevBtn) prevBtn.addEventListener('click', ()=>{
-        snapTo((idx - 1 + items.length) % items.length); // instantaneo, sin animacion
-        scheduleAuto(ARROW_COOLDOWN);
-      });
+      function manualMove(newIdx){
+        snapTo(newIdx);                 // instantaneo, sin animacion
+        scheduleAuto(ARROW_COOLDOWN);   // el avance automatico espera 8 s
+      }
+      if(nextBtn) nextBtn.addEventListener('click', ()=> manualMove((idx + 1) % items.length));
+      if(prevBtn) prevBtn.addEventListener('click', ()=> manualMove((idx - 1 + items.length) % items.length));
+
+      /* Celular: deslizar el dedo hacia los lados mueve el carrusel (igual que las flechas) */
+      let swX = 0, swY = 0, swOn = false;
+      track.addEventListener('touchstart', e=>{
+        if(e.touches.length !== 1){ swOn = false; return; }
+        swX = e.touches[0].clientX; swY = e.touches[0].clientY; swOn = true;
+      }, { passive:true });
+      track.addEventListener('touchend', e=>{
+        if(!swOn || items.length <= 1) return;
+        swOn = false;
+        const t = e.changedTouches[0], dx = t.clientX - swX, dy = t.clientY - swY;
+        if(Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.4){
+          manualMove(dx < 0 ? (idx + 1) % items.length : (idx - 1 + items.length) % items.length);
+        }
+      }, { passive:true });
 
       if(items.length > 1){
         scheduleAuto(opts.autoMs || 4000);
@@ -601,14 +681,14 @@ fetch(CSV_URL)
     /* ===== Recien llegados: solo con stock real, sin agotados ni preventa ===== */
     makeInfiniteCarousel({
       trackId:'recentGrid', prevId:'recentPrev', nextId:'recentNext', sectionId:'recientes',
-      items: products.filter(p=> !isPreventaProduct(p) && getStockNum(p) > 0).slice(-20).reverse(),
+      items: products.filter(p=> !isPreventaProduct(p) && getStockNum(p) > 0).sort(newestFirst).slice(0,20),
       visibleCount: 5, autoMs: 3000
     });
 
     /* ===== Preventas: solo lo que esta en preventa ===== */
     makeInfiniteCarousel({
       trackId:'preventaGrid', prevId:'preventaPrev', nextId:'preventaNext', sectionId:'preventaSection',
-      items: products.filter(p=> isPreventaProduct(p)).reverse(),
+      items: products.filter(p=> isPreventaProduct(p)).sort(newestFirst),
       visibleCount: 5, autoMs: 3000
     });
 
@@ -847,6 +927,18 @@ if(backToTop){
   }
   btn.addEventListener('click', ()=> setMax(!box.classList.contains('is-max')));
   document.addEventListener('keydown', e=>{ if(e.key==='Escape' && box.classList.contains('is-max')) setMax(false); });
+})();
+</script>
+<script>
+/* Celular: abrir/cerrar el mapa y texto corto en el buscador */
+(function(){
+  var mt = document.getElementById('mapToggle'), hero = document.querySelector('section.hero');
+  if(mt && hero) mt.addEventListener('click', function(){
+    var open = hero.classList.toggle('map-open');
+    mt.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  var i = document.getElementById('topSearch');
+  if(i && window.matchMedia('(max-width:640px)').matches) i.placeholder = 'Buscar figuras, peluches…';
 })();
 </script>
 </body>
